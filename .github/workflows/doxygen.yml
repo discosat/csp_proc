@@ -1,0 +1,39 @@
+name: Generate Doxygen documentation
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        ref: gh-pages
+
+    - name: Set git identity
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+
+    - name: Merge main
+      run: |
+        git fetch origin main
+        git merge origin/main --allow-unrelated-histories
+
+    - name: Install Doxygen
+      run: sudo apt-get install doxygen
+
+    - name: Generate documentation
+      run: |
+        doxygen Doxyfile
+
+    - name: Commit and push changes
+      run: |
+        git add docs/html
+        git commit -m "Update Doxygen documentation" -a || echo "No changes to commit"
+        git push origin gh-pages
