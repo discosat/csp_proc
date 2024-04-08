@@ -4,9 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build:
+    # Prevent workflow from running by default on forks
+    if: github.repository == 'discosat/csp_proc'
     runs-on: ubuntu-latest
 
     steps:
@@ -23,7 +26,7 @@ jobs:
     - name: Merge main
       run: |
         git fetch origin main
-        git merge origin/main --allow-unrelated-histories
+        git merge origin/main --allow-unrelated-histories || (git checkout --theirs . && git add . && git commit -m "Resolved merge conflict by using incoming changes")
 
     - name: Install Doxygen
       run: sudo apt-get install doxygen
