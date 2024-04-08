@@ -104,12 +104,12 @@ const char * comparison_op_str[] = {
 };
 
 const char * unary_op_str[] = {
-	"++",  // OP_INC
-	"--",  // OP_DEC
-	"!",   // OP_NOT
-	"-",   // OP_NEG
-	"idt"  // OP_IDT
-	"rmt"  // OP_RMT
+	"++",   // OP_INC
+	"--",   // OP_DEC
+	"!",    // OP_NOT
+	"-",    // OP_NEG
+	"idt",  // OP_IDT
+	"rmt"   // OP_RMT
 };
 
 const char * binary_op_str[] = {
