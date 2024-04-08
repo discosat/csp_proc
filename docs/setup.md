@@ -7,6 +7,7 @@ The following demonstrates the outline of a `meson.build` file in a parent proje
 project(..., subproject_dir: 'lib', default_options: [
 	'csp_proc:slash=false',
 	'csp_proc:freertos=false',
+	'csp_proc:posix=false',
 	'csp_proc:RESERVED_PROC_SLOTS=...',
     ...
 ])
@@ -22,7 +23,7 @@ app = executable(...
 )
 ```
 
-Note that `csp_proc` is not a standalone library. The core part of the library depends on `libparam` and `libcsp`, while optional parts depend on `slash` and the FreeRTOS kernel. A reference setup can be found in the following [Dockerfile](https://github.com/discosat/csp_proc/blob/main/Dockerfile), which is the environment that's used to run the automated tests in the CI pipeline.
+Note that `csp_proc` is not a standalone library. The core part of the library depends on `libparam` and `libcsp`, while optional parts depend on `slash` and the FreeRTOS kernel or POSIX threads. A reference setup can be found in the following [Dockerfile](https://github.com/discosat/csp_proc/blob/main/Dockerfile), which is the environment that's used to run the automated tests in the CI pipeline.
 
 ## Composition of the library
 The library has the following components:
@@ -37,8 +38,11 @@ The core part of the library consists of the following files:
 - `proc_types.h`: Procedure data type, including the procedure structure and the instruction structure.
 
 ### Runtime
-- _Optional_ `proc_runtime_FreeRTOS.c`: A FreeRTOS-based runtime for `csp_proc`.
-- _Optional_ `proc_runtime_instructions.c`: Instruction handlers for the FreeRTOS-based runtime.
+- _Optional_ `runtime/proc_runtime_FreeRTOS.c`: FreeRTOS-based runtime for `csp_proc`.
+- _Optional_ `runtime/proc_runtime_instructions_FreeRTOS.c`: FreeRTOS-specific instruction handlers.
+- _Optional_ `runtime/proc_runtime_POSIX.c`: POSIX-based runtime for `csp_proc`.
+- _Optional_ `runtime/proc_runtime_instructions_POSIX.c`: POSIX-specific instruction handlers.
+- _Optional_ `runtime/proc_runtime_instructions.c`: Default platform-agnostic instruction handlers.
 
 ### Slash
 - _Optional_ `slash/slash_csp_proc.c`: A series of slash commands for interacting with `csp_proc`.
@@ -54,13 +58,16 @@ The following options can be configured at compile-time:
 - `MAX_PROC_RECURSION_DEPTH`: This option sets the maximum recursion depth of a procedure.
 - `MAX_PROC_CONCURRENT`: This option sets the maximum number of procedure runtimes that can run concurrently.
 
-In addition to the above, the default FreeRTOS-based runtime has its own set of configuration options:
+In addition to the above, the default runtime implementations have their own set of configuration options:
 
-- `PROC_RUNTIME_TASK_SIZE`: This option sets the stack size of a runtime task.
-- `PROC_RUNTIME_TASK_PRIORITY`: This option sets the FreeRTOS task priority of a runtime task.
 - `PARAM_REMOTE_TIMEOUT_MS`: This option sets the timeout (in milliseconds) for a remote call via libparam.
 - `PARAM_ACK_ON_PUSH`: This option toggles whether to expect an acknowledgment from the remote node when pushing a parameter.
 - `PROC_FLOAT_EPSILON`: This option sets the epsilon value for floating-point comparisons.
+
+And the FreeRTOS-based runtime has the following additional options:
+
+- `PROC_RUNTIME_TASK_SIZE`: This option sets the stack size of a runtime task.
+- `PROC_RUNTIME_TASK_PRIORITY`: This option sets the FreeRTOS task priority of a runtime task.
 - `TASK_STORAGE_RECURSION_DEPTH_INDEX`: This option sets the index of the thread-local storage pointer for recursion depth tracking.
 
 Please note that the FreeRTOS-based runtime requires a `FreeRTOSConfig.h` file in the parent project. This configuration file should define `configNUM_THREAD_LOCAL_STORAGE_POINTER` to a value greater than 0, as the tracking of recursion depth is done using thread-local storage.
