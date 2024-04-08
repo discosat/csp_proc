@@ -2,6 +2,7 @@ option('build_tests', type: 'boolean', value: false, description: 'Build the tes
 
 option('slash', type: 'boolean', value: false, description: 'Build slash (yields)', yield: true)
 option('freertos', type: 'boolean', value: false, description: 'Build the default FreeRTOS-based runtime (yields)', yield: true)
+option('posix', type: 'boolean', value: false, description: 'Build the default POSIX-based runtime (yields)', yield: true)
 option('proc_analysis', type: 'boolean', value: false, description: 'Build the analysis module')
 
 option('RESERVED_PROC_SLOTS', type : 'string', value : '', description : 'The number of reserved procedure slots.')

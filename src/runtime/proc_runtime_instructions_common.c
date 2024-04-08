@@ -4,8 +4,6 @@
 #include <param/param_client.h>
 #include <param/param_string.h>
 
-#include "FreeRTOS.h"
-
 #include <csp_proc/proc_types.h>
 #include <csp_proc/proc_runtime.h>
 #include <csp_proc/proc_analyze.h>
@@ -22,10 +20,8 @@
 #define PROC_FLOAT_EPSILON (1e-6)
 #endif
 
-// NOTE: requires configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 in FreeRTOSConfig.h
-#ifndef TASK_STORAGE_RECURSION_DEPTH_INDEX
-#define TASK_STORAGE_RECURSION_DEPTH_INDEX 0
-#endif
+// Forward declaration
+int proc_instructions_exec(proc_t * proc, proc_analysis_t * analysis);
 
 /**
  * Simplified parameter type for performing arithmetic & logical operations.
@@ -58,14 +54,6 @@ typedef struct {
 	operand_t operand;
 	param_t * param;
 } operand_param_pair_t;
-
-typedef enum {
-	IF_ELSE_FLAG_TRUE = 1,
-	IF_ELSE_FLAG_FALSE = 0,
-	IF_ELSE_FLAG_NONE = -1,
-	IF_ELSE_FLAG_ERR = -2,
-	IF_ELSE_FLAG_ERR_TYPE = -3,
-} if_else_flag_t;
 
 /**
  * Parse a parameter to an operand.
@@ -161,7 +149,7 @@ int parse_param_to_operand(param_t * param, operand_t * operand, int offset) {
 			break;
 		}
 		default:
-			printf("Invalid or unsupported parameter type\n");
+			csp_print("Invalid or unsupported parameter type\n");
 			return -1;
 	}
 
@@ -221,7 +209,6 @@ param_t * proc_fetch_param(char * param_name, int node) {
 
 	param_list_iterator i = {};
 	while ((param = param_list_iterate(&i)) != NULL && (inf_loop_guard++ < 10000)) {
-
 		int strmatch_ret = strmatch(param->name, param_name_copy, strlen(param->name), strlen(param_name_copy));
 
 		if (strmatch_ret == 0) {
@@ -246,7 +233,10 @@ param_t * proc_fetch_param(char * param_name, int node) {
 			free(param_name_copy);
 			return NULL;
 		}
+
+		break;
 	}
+
 	free(param_name_copy);
 	return param;
 }
@@ -256,11 +246,11 @@ int fetch_operand_param_pair(char * param_name, operand_param_pair_t * pair, int
 
 	pair->param = proc_fetch_param(param_name, node);
 	if (pair->param == NULL) {
-		printf("Failed to fetch %s\n", param_name);
+		csp_print("Failed to fetch %s\n", param_name);
 		return -1;
 	}
 	if (parse_param_to_operand(pair->param, &pair->operand, offset) != 0) {
-		printf("Failed to parse %s\n", param_name);
+		csp_print("Failed to parse %s\n", param_name);
 		return -1;
 	}
 	return 0;
@@ -306,7 +296,7 @@ int operand_to_valuebuf(operand_t * operand, char * valuebuf) {
 			strcpy(valuebuf, operand->value.s);
 			break;
 		default:
-			printf("Invalid or unsupported parameter type\n");
+			csp_print("Invalid or unsupported parameter type\n");
 			return -1;
 	}
 	return 0;
@@ -314,7 +304,7 @@ int operand_to_valuebuf(operand_t * operand, char * valuebuf) {
 
 char * proc_value_str_to_valuebuf(param_t * param, char * valuebuf, char * value_str) {
 	if (param_str_to_value(param->type, value_str, valuebuf) < 0) {
-		printf("invalid parameter value\n");
+		csp_print("invalid parameter value\n");
 		return -1;
 	}
 	return 0;
@@ -324,19 +314,19 @@ int proc_set_param(char * param_name, operand_t * operand, char * value_str, int
 	param_t * param = NULL;
 
 	if (operand == NULL && value_str == NULL) {
-		printf("No value provided\n");
+		csp_print("No value provided\n");
 		return -1;
 	}
 
 	param = proc_fetch_param(param_name, node);
 	if (param == NULL) {
 		// TODO: add ability to add new parameters?
-		printf("Failed to fetch %s\n", param_name);
+		csp_print("Failed to fetch %s\n", param_name);
 		return -1;
 	}
 
 	if (param->mask & PM_READONLY) {
-		printf("%s is read-only\n", param->name);
+		csp_print("%s is read-only\n", param->name);
 		return -1;
 	}
 
@@ -361,7 +351,7 @@ int proc_set_param(char * param_name, operand_t * operand, char * value_str, int
 		csp_clock_get_time(&time_now);
 		*param->timestamp = 0;
 		if (param_push_single(param, offset, valuebuf, 0, node, PARAM_REMOTE_TIMEOUT_MS, 2, PARAM_ACK_ON_PUSH) < 0 && PARAM_ACK_ON_PUSH) {
-			printf("No response\n");
+			csp_print("No response\n");
 			return -1;
 		}
 	}
@@ -377,7 +367,7 @@ int proc_set_param(char * param_name, operand_t * operand, char * value_str, int
  */
 int proc_runtime_ifelse(proc_instruction_t * instruction) {
 	if (instruction->type != PROC_IFELSE) {
-		printf("Invalid instruction type, expected PROC_IFELSE\n");
+		csp_print("Invalid instruction type, expected PROC_IFELSE\n");
 		return IF_ELSE_FLAG_ERR;
 	}
 
@@ -385,17 +375,17 @@ int proc_runtime_ifelse(proc_instruction_t * instruction) {
 	param_t * param_b = proc_fetch_param(instruction->instruction.ifelse.param_b, instruction->node);
 
 	if (param_a == NULL || param_b == NULL || param_a->type == PARAM_TYPE_INVALID || param_b->type == PARAM_TYPE_DATA) {
-		printf("Failed to fetch params or invalid param type\n");
+		csp_print("Failed to fetch params or invalid param type\n");
 		return IF_ELSE_FLAG_ERR;
 	}
 
 	operand_param_pair_t op_par_pair_a, op_par_pair_b;
 	if (fetch_operand_param_pair(instruction->instruction.ifelse.param_a, &op_par_pair_a, instruction->node) != 0) {
-		printf("Failed to fetch operand A\n");
+		csp_print("Failed to fetch operand A\n");
 		return IF_ELSE_FLAG_ERR;
 	}
 	if (fetch_operand_param_pair(instruction->instruction.ifelse.param_b, &op_par_pair_b, instruction->node) != 0) {
-		printf("Failed to fetch operand B\n");
+		csp_print("Failed to fetch operand B\n");
 		return IF_ELSE_FLAG_ERR;
 	}
 
@@ -490,55 +480,15 @@ int proc_runtime_ifelse(proc_instruction_t * instruction) {
 			break;
 		}
 		default:
-			printf("Invalid or unsupported operand type %d\n", op_par_pair_a.operand.type);
+			csp_print("Invalid or unsupported operand type %d\n", op_par_pair_a.operand.type);
 			break;
 	}
 	return IF_ELSE_FLAG_ERR;
 }
 
-/**
- * Execute a block instruction.
- *
- * @param instruction The instruction to execute
- * @return int flag indicating the result of the block instruction (0 for success, -1 for error)
- */
-int proc_runtime_block(proc_instruction_t * instruction) {
-	if (instruction->type != PROC_BLOCK) {
-		printf("Invalid instruction type, expected PROC_BLOCK\n");
-		return -1;
-	}
-
-	TickType_t timeout_tick = xTaskGetTickCount() + pdMS_TO_TICKS(MAX_PROC_BLOCK_TIMEOUT_MS);
-
-	// Create a temporary ifelse instruction from the block instruction for compatibility with proc_runtime_ifelse
-	proc_instruction_t ifelse_instruction;
-	ifelse_instruction.type = PROC_IFELSE;
-	ifelse_instruction.node = instruction->node;
-	ifelse_instruction.instruction.ifelse = instruction->instruction.block;
-
-	while (xTaskGetTickCount() < timeout_tick) {
-		int ifelse_result = proc_runtime_ifelse(&ifelse_instruction);
-		if (ifelse_result == IF_ELSE_FLAG_ERR) {
-			printf("Error in if-else condition %d\n", ifelse_result);
-			return -1;
-		} else if (ifelse_result == IF_ELSE_FLAG_TRUE) {
-			break;
-		}
-
-		vTaskDelay(pdMS_TO_TICKS(MIN_PROC_BLOCK_PERIOD_MS));
-	}
-
-	if (xTaskGetTickCount() >= timeout_tick) {
-		printf("Timeout reached in proc_runtime_block\n");
-		return -1;
-	}
-
-	return 0;
-}
-
 int proc_runtime_set(proc_instruction_t * instruction) {
 	if (instruction->type != PROC_SET) {
-		printf("Invalid instruction type, expected PROC_SET\n");
+		csp_print("Invalid instruction type, expected PROC_SET\n");
 		return -1;
 	}
 
@@ -550,7 +500,7 @@ int proc_runtime_set(proc_instruction_t * instruction) {
 
 int proc_runtime_unop(proc_instruction_t * instruction) {
 	if (instruction->type != PROC_UNOP) {
-		printf("Invalid instruction type, expected PROC_UNOP\n");
+		csp_print("Invalid instruction type, expected PROC_UNOP\n");
 		return -1;
 	}
 
@@ -565,7 +515,7 @@ int proc_runtime_unop(proc_instruction_t * instruction) {
 
 	operand_param_pair_t op_par_pair;
 	if (fetch_operand_param_pair(instruction->instruction.unop.param, &op_par_pair, fetch_node) != 0) {
-		printf("Failed to fetch operand\n");
+		csp_print("Failed to fetch operand\n");
 		return -1;
 	}
 
@@ -579,7 +529,7 @@ int proc_runtime_unop(proc_instruction_t * instruction) {
 			} else if (op_par_pair.operand.type == OPERAND_TYPE_UINT) {
 				op_par_pair.operand.value.u64 = (instruction->instruction.unop.op == OP_INC) ? op_par_pair.operand.value.u64 + 1 : op_par_pair.operand.value.u64 - 1;
 			} else {
-				printf("Error: Cannot increment or decrement type (%d)\n", op_par_pair.operand.type);
+				csp_print("Error: Cannot increment or decrement type (%d)\n", op_par_pair.operand.type);
 				return -1;
 			}
 			break;
@@ -589,7 +539,7 @@ int proc_runtime_unop(proc_instruction_t * instruction) {
 			} else if (op_par_pair.operand.source_type == OPERAND_TYPE_UINT) {
 				op_par_pair.operand.value.u64 = ~op_par_pair.operand.value.u64;
 			} else {
-				printf("Error: Cannot perform bitwise NOT on type (%d)\n", op_par_pair.operand.type);
+				csp_print("Error: Cannot perform bitwise NOT on type (%d)\n", op_par_pair.operand.type);
 				return -1;
 			}
 			break;
@@ -599,7 +549,7 @@ int proc_runtime_unop(proc_instruction_t * instruction) {
 			} else if (op_par_pair.operand.type == OPERAND_TYPE_INT) {
 				op_par_pair.operand.value.i64 = -op_par_pair.operand.value.i64;
 			} else {
-				printf("Error: Cannot negate type (%d)\n", op_par_pair.operand.type);
+				csp_print("Error: Cannot negate type (%d)\n", op_par_pair.operand.type);
 				return -1;
 			}
 			break;
@@ -607,7 +557,7 @@ int proc_runtime_unop(proc_instruction_t * instruction) {
 		case OP_RMT:
 			break;
 		default:
-			printf("Invalid or unsupported unary operation (%d)\n", instruction->instruction.unop.op);
+			csp_print("Invalid or unsupported unary operation (%d)\n", instruction->instruction.unop.op);
 			return -1;
 	}
 
@@ -622,14 +572,14 @@ int proc_runtime_unop(proc_instruction_t * instruction) {
 
 int proc_runtime_binop(proc_instruction_t * instruction) {
 	if (instruction->type != PROC_BINOP) {
-		printf("Invalid instruction type, expected PROC_BINOP\n");
+		csp_print("Invalid instruction type, expected PROC_BINOP\n");
 		return -1;
 	}
 
 	operand_param_pair_t op_par_pair_a, op_par_pair_b;
 	if (fetch_operand_param_pair(instruction->instruction.binop.param_a, &op_par_pair_a, instruction->node) != 0 ||
 		fetch_operand_param_pair(instruction->instruction.binop.param_b, &op_par_pair_b, instruction->node) != 0) {
-		printf("Failed to fetch operands\n");
+		csp_print("Failed to fetch operands\n");
 		return -1;
 	}
 
@@ -651,13 +601,13 @@ int proc_runtime_binop(proc_instruction_t * instruction) {
 						break;
 					case OP_DIV:
 						if (op_par_pair_b.operand.value.d == 0) {
-							printf("Error: Division by zero\n");
+							csp_print("Error: Division by zero\n");
 							return -1;
 						}
 						op_par_pair_a.operand.value.d /= op_par_pair_b.operand.value.d;
 						break;
 					default:
-						printf("Invalid or unsupported binary operation (%d)\n", instruction->instruction.binop.op);
+						csp_print("Invalid or unsupported binary operation (%d)\n", instruction->instruction.binop.op);
 						return -1;
 				}
 			} else if (op_par_pair_a.operand.type == OPERAND_TYPE_INT && op_par_pair_b.operand.type == OPERAND_TYPE_INT) {
@@ -673,13 +623,13 @@ int proc_runtime_binop(proc_instruction_t * instruction) {
 						break;
 					case OP_DIV:
 						if (op_par_pair_b.operand.value.i64 == 0) {
-							printf("Error: Division by zero\n");
+							csp_print("Error: Division by zero\n");
 							return -1;
 						}
 						op_par_pair_a.operand.value.i64 /= op_par_pair_b.operand.value.i64;
 						break;
 					default:
-						printf("Invalid or unsupported binary operation (%d)\n", instruction->instruction.binop.op);
+						csp_print("Invalid or unsupported binary operation (%d)\n", instruction->instruction.binop.op);
 						return -1;
 				}
 			} else if (op_par_pair_a.operand.type == OPERAND_TYPE_UINT && op_par_pair_b.operand.type == OPERAND_TYPE_UINT) {
@@ -695,17 +645,17 @@ int proc_runtime_binop(proc_instruction_t * instruction) {
 						break;
 					case OP_DIV:
 						if (op_par_pair_b.operand.value.u64 == 0) {
-							printf("Error: Division by zero\n");
+							csp_print("Error: Division by zero\n");
 							return -1;
 						}
 						op_par_pair_a.operand.value.u64 /= op_par_pair_b.operand.value.u64;
 						break;
 					default:
-						printf("Invalid or unsupported binary operation (%d)\n", instruction->instruction.binop.op);
+						csp_print("Invalid or unsupported binary operation (%d)\n", instruction->instruction.binop.op);
 						return -1;
 				}
 			} else {
-				printf("Error: Cannot perform arithmetic operation on types (%d, %d)\n", op_par_pair_a.operand.type, op_par_pair_b.operand.type);
+				csp_print("Error: Cannot perform arithmetic operation on types (%d, %d)\n", op_par_pair_a.operand.type, op_par_pair_b.operand.type);
 				return -1;
 			}
 			break;
@@ -719,7 +669,7 @@ int proc_runtime_binop(proc_instruction_t * instruction) {
 				switch (instruction->instruction.binop.op) {
 					case OP_MOD:
 						if (op_par_pair_b.operand.value.i64 == 0) {
-							printf("Error: Division by zero\n");
+							csp_print("Error: Division by zero\n");
 							return -1;
 						}
 						op_par_pair_a.operand.value.i64 %= op_par_pair_b.operand.value.i64;
@@ -740,14 +690,14 @@ int proc_runtime_binop(proc_instruction_t * instruction) {
 						op_par_pair_a.operand.value.i64 ^= op_par_pair_b.operand.value.i64;
 						break;
 					default:
-						printf("Invalid or unsupported binary operation (%d)\n", instruction->instruction.binop.op);
+						csp_print("Invalid or unsupported binary operation (%d)\n", instruction->instruction.binop.op);
 						return -1;
 				}
 			} else if (op_par_pair_a.operand.type == OPERAND_TYPE_UINT && op_par_pair_b.operand.type == OPERAND_TYPE_UINT) {
 				switch (instruction->instruction.binop.op) {
 					case OP_MOD:
 						if (op_par_pair_b.operand.value.u64 == 0) {
-							printf("Error: Division by zero\n");
+							csp_print("Error: Division by zero\n");
 							return -1;
 						}
 						op_par_pair_a.operand.value.u64 %= op_par_pair_b.operand.value.u64;
@@ -768,16 +718,16 @@ int proc_runtime_binop(proc_instruction_t * instruction) {
 						op_par_pair_a.operand.value.u64 ^= op_par_pair_b.operand.value.u64;
 						break;
 					default:
-						printf("Invalid or unsupported binary operation (%d)\n", instruction->instruction.binop.op);
+						csp_print("Invalid or unsupported binary operation (%d)\n", instruction->instruction.binop.op);
 						return -1;
 				}
 			} else {
-				printf("Error: Cannot perform operation on types (%d, %d)\n", op_par_pair_a.operand.type, op_par_pair_b.operand.type);
+				csp_print("Error: Cannot perform operation on types (%d, %d)\n", op_par_pair_a.operand.type, op_par_pair_b.operand.type);
 				return -1;
 			}
 			break;
 		default:
-			printf("Invalid or unsupported binary operation (%d)\n", instruction->instruction.binop.op);
+			csp_print("Invalid or unsupported binary operation (%d)\n", instruction->instruction.binop.op);
 			return -1;
 	}
 
@@ -792,7 +742,7 @@ int proc_runtime_binop(proc_instruction_t * instruction) {
 
 int proc_runtime_call(proc_instruction_t * instruction, proc_analysis_t ** analysis, proc_t ** proc, int * i, if_else_flag_t * _if_else_flag) {
 	if (instruction->type != PROC_CALL) {
-		printf("Invalid instruction type, expected PROC_CALL\n");
+		csp_print("Invalid instruction type, expected PROC_CALL\n");
 		return -1;
 	}
 	proc_instruction_analysis_t * instruction_analysis = &((*analysis)->instruction_analyses[(*i)]);
@@ -805,7 +755,7 @@ int proc_runtime_call(proc_instruction_t * instruction, proc_analysis_t ** analy
 		}
 	}
 	if (analysis_index == -1) {
-		printf("Error: procedure not found %d\n", instruction->instruction.call.procedure_slot);
+		csp_print("Error: procedure not found %d\n", instruction->instruction.call.procedure_slot);
 		return -1;
 	}
 
@@ -820,64 +770,4 @@ int proc_runtime_call(proc_instruction_t * instruction, proc_analysis_t ** analy
 		return proc_instructions_exec(called_proc_analysis->proc, called_proc_analysis);
 	}
 	return 0;
-}
-
-int proc_instructions_exec(proc_t * proc, proc_analysis_t * analysis) {
-	// NOTE: task local storage requires configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 in FreeRTOSConfig.h
-	int recursion_depth = (int)pvTaskGetThreadLocalStoragePointer(NULL, TASK_STORAGE_RECURSION_DEPTH_INDEX);
-	if (recursion_depth > MAX_PROC_RECURSION_DEPTH) {
-		printf("Error: maximum recursion depth exceeded\n");
-		return -1;
-	}
-	vTaskSetThreadLocalStoragePointer(NULL, TASK_STORAGE_RECURSION_DEPTH_INDEX, (void *)(recursion_depth + 1));
-
-	if_else_flag_t _if_else_flag = IF_ELSE_FLAG_NONE;
-	int ret = 0;
-
-	for (int i = 0; i < proc->instruction_count; i++) {
-
-		proc_instruction_t instruction = proc->instructions[i];
-
-		if (_if_else_flag == IF_ELSE_FLAG_FALSE) {  // skip instruction
-			_if_else_flag = IF_ELSE_FLAG_NONE;
-			continue;
-		} else if (_if_else_flag == IF_ELSE_FLAG_TRUE) {  // if-clause active, skip else-clause
-			_if_else_flag = IF_ELSE_FLAG_FALSE;
-		}
-
-		switch (instruction.type) {
-			case PROC_BLOCK:
-				ret = proc_runtime_block(&instruction);
-				break;
-			case PROC_IFELSE:
-				_if_else_flag = proc_runtime_ifelse(&instruction);
-				ret = (_if_else_flag <= IF_ELSE_FLAG_ERR) ? _if_else_flag : 0;
-				break;
-			case PROC_SET:
-				ret = proc_runtime_set(&instruction);
-				break;
-			case PROC_UNOP:
-				ret = proc_runtime_unop(&instruction);
-				break;
-			case PROC_BINOP:
-				ret = proc_runtime_binop(&instruction);
-				break;
-			case PROC_CALL:
-				ret = proc_runtime_call(&instruction, &analysis, &proc, &i, &_if_else_flag);
-				break;
-			case PROC_NOOP:
-				break;
-			default:
-				ret = -1;
-				break;
-		}
-
-		// Error handling - TODO: smarter way to differentiate between errors from different instructions - maybe return a struct with error code and instruction index?
-		if (ret != 0) {
-			vTaskSetThreadLocalStoragePointer(NULL, TASK_STORAGE_RECURSION_DEPTH_INDEX, (void *)(recursion_depth));
-			return ret;
-		}
-	}
-	vTaskSetThreadLocalStoragePointer(NULL, TASK_STORAGE_RECURSION_DEPTH_INDEX, (void *)(recursion_depth));
-	return ret;
 }

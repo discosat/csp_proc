@@ -41,4 +41,15 @@ int proc_runtime_init();
  */
 int proc_runtime_run(uint8_t proc_slot);
 
+/**
+ * Used to indicate the result of an if-else instruction in an instruction handler.
+ */
+typedef enum {
+	IF_ELSE_FLAG_TRUE = 1,
+	IF_ELSE_FLAG_FALSE = 0,
+	IF_ELSE_FLAG_NONE = -1,
+	IF_ELSE_FLAG_ERR = -2,
+	IF_ELSE_FLAG_ERR_TYPE = -3,
+} if_else_flag_t;
+
 #endif  // CSP_PROC_RUNTIME_H

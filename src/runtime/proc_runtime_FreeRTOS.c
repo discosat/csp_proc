@@ -3,6 +3,8 @@
 #include <csp_proc/proc_runtime.h>
 #include <csp_proc/proc_analyze.h>
 
+#include <csp/csp.h>
+
 #include <FreeRTOS.h>
 #include <semphr.h>
 #include <task.h>
@@ -86,12 +88,12 @@ void runtime_task(void * pvParameters) {
 		.analyzed_proc_count = 0};
 	proc_analysis_t * analysis = malloc(sizeof(proc_analysis_t));
 	if (analysis == NULL) {
-		printf("Error allocating memory for analysis\n");
+		csp_print("Error allocating memory for analysis\n");
 		return -1;
 	}
 
 	if (proc_analyze(proc, analysis, &analysis_config) != 0) {
-		printf("Error analyzing procedure\n");
+		csp_print("Error analyzing procedure\n");
 		return -1;
 	}
 
@@ -113,34 +115,34 @@ void runtime_task(void * pvParameters) {
 		}
 	}
 	xSemaphoreGive(running_tasks_mutex);
-	printf("Procedure finished (%s)\n", pcTaskGetName(task_handle));
+	csp_print("Procedure finished (%s)\n", pcTaskGetName(task_handle));
 	free_proc_analysis(analysis);
 	free_proc(proc);
 	vTaskDelete(NULL);
 }
 
 int proc_runtime_run(uint8_t proc_slot) {
-	printf("Running procedure %d\n", proc_slot);
+	csp_print("Running procedure %d\n", proc_slot);
 	if (running_tasks_count >= MAX_PROC_CONCURRENT) {
-		printf("Maximum number of concurrent procedures reached\n");
+		csp_print("Maximum number of concurrent procedures reached\n");
 		return -1;
 	}
 
 	proc_t * stored_proc = get_proc(proc_slot);
 
 	if (stored_proc == NULL) {
-		printf("Procedure in slot %d not found\n", proc_slot);
+		csp_print("Procedure in slot %d not found\n", proc_slot);
 		return -1;
 	}
 	if (stored_proc->instruction_count == 0) {
-		printf("Procedure in slot %d has no instructions\n", proc_slot);
+		csp_print("Procedure in slot %d has no instructions\n", proc_slot);
 		return -1;
 	}
 
 	// Copy procedure to detach from proc store
-	proc_t * detached_proc = malloc(sizeof(proc_t));  // TODO: copy call-instruction procs as well
+	proc_t * detached_proc = malloc(sizeof(proc_t));
 	if (deepcopy_proc(stored_proc, detached_proc) != 0) {
-		printf("Failed to copy procedure\n");
+		csp_print("Failed to copy procedure\n");
 		return -1;
 	}
 
@@ -157,7 +159,7 @@ int proc_runtime_run(uint8_t proc_slot) {
 	task_create_ret = xTaskCreate(runtime_task, task_name, PROC_RUNTIME_TASK_SIZE, detached_proc, PROC_RUNTIME_TASK_PRIORITY, &task_handle);
 
 	if (task_create_ret != pdPASS) {
-		printf("Failed to create task\n");
+		csp_print("Failed to create task\n");
 		free_proc(detached_proc);
 		xSemaphoreGive(running_tasks_mutex);
 		return -1;

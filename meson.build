@@ -11,9 +11,9 @@ csp_proc_inc = include_directories('include')
 
 csp_proc_src = files([
 	'src/proc_client.c',
-    'src/proc_pack.c',
-    'src/proc_server.c',
-    'src/proc_store.c',
+	'src/proc_pack.c',
+	'src/proc_server.c',
+	'src/proc_store.c',
 ])
 
 # Static & dynamic analysis
@@ -34,17 +34,33 @@ if get_option('slash') == true
 	endif
 endif
 
+if get_option('posix') == true and get_option('freertos') == true
+    error('Cannot build with multiple runtimes enabled (choose one max)')
+endif
+
 # Default FreeRTOS-based runtime implementation
 freertos_dep = []
 if get_option('freertos') == true
 	freertos_dep = dependency('freertos', fallback : ['freertos', 'freertos_dep'], required: false)
 	if freertos_dep.found()
 		csp_proc_src += files([
-			'src/proc_runtime_instructions.c',
-			'src/proc_runtime_FreeRTOS.c',
+			'src/runtime/proc_runtime_instructions_common.c',
+			'src/runtime/proc_runtime_instructions_FreeRTOS.c',
+			'src/runtime/proc_runtime_FreeRTOS.c',
 			'src/proc_analyze.c',
 		])
 	endif
+endif
+
+# Default POSIX-based runtime implementation
+posix_dep = []
+if get_option('posix') == true
+	csp_proc_src += files([
+		'src/runtime/proc_runtime_instructions_common.c',
+		'src/runtime/proc_runtime_instructions_POSIX.c',
+		'src/runtime/proc_runtime_POSIX.c',
+		'src/proc_analyze.c',
+	])
 endif
 
 # Configuration options

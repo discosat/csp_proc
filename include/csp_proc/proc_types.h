@@ -93,6 +93,7 @@ typedef struct {
 	} instruction;
 } proc_instruction_t;
 
+// Note: Using __attribute__((packed)) would be unnecessary given the manual serialization of the struct in proc_pack.c
 typedef struct {
 	proc_instruction_t instructions[MAX_INSTRUCTIONS];
 	uint8_t instruction_count;
