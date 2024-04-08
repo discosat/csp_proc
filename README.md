@@ -148,7 +148,7 @@ After which the 10th term of the Fibonacci sequence can be read from the `rx0` r
 ```bash
 get rx0
 ```
-Naturally, this assumes `n`, `_zero`, `rx0`, `rx1`, and `rx2` are available as integer libparam parameters on the node. Also note that with the default FreeRTOS-based runtime, it is recommended to divide complex routines into small units of work, where any calls to other procedures are done in the last instruction (or second-last if preceded by ifelse) to avoid nesting function calls.
+Naturally, this assumes `n`, `_zero`, `rx0`, `rx1`, and `rx2` are available as integer libparam parameters on the node. Also note that with the default FreeRTOS/POSIX-based runtimes, it is recommended to divide complex routines into small units of work, where any calls to other procedures are done in the last instruction (or second-last if preceded by ifelse) to avoid nesting function calls.
 
 # Build Environment
 Refer to the Dockerfile for a reference build environment, including code formatter. It can be brought up like so:
