@@ -39,18 +39,20 @@ The following commands allow the user to program control-flow and arithmetic ope
 # Usage Examples
 
 ## Geo-fencing
-In this example, we will imagine a scenario where a vehicle is equipped with a GNSS module exposed via libparam parameters on node 1, and node 2 has some active component that needs to be controlled based on the vehicle's position, e.g. a sensor logging a data point when the vehicle enters a certain area. The following is a sequence of commands that can be used to implement a simple geo-fencing procedure based on manhattan distance from a fixed point. For this example, it's assumed that node 1 has the libparam parameters: `lat` (double), `lon` (double) from the GNSS module along with `lat_diff` (double), `lon_diff` (double), `dist` (double) and `geo_check` (uint8) to store intermediate results, and `target_lon` (double) `target_lat` (double), `max_dist` (double) to determine the geo-fencing area. Node 2 has a `sensor_log` (uint8) parameter with a callback attached to trigger the logging of a data point.
+In this example, we will imagine a scenario where a vehicle is equipped with a GNSS module exposed via libparam parameters on node 1, and node 2 has some active component that needs to be controlled based on the vehicle's position, e.g. a sensor logging a data point when the vehicle enters a certain area. The following is a sequence of commands that can be used to implement a simple geo-fencing procedure based on manhattan distance from a fixed point. For this example, it's assumed that node 1 has the libparam parameters: `lat` (double), `lon` (double) from the GNSS module along with `lat_diff` (double), `lon_diff` (double), `dist` (double), `geo_check` (uint8) and `_zero` (uint8) to store intermediate results, and `target_lon` (double) `target_lat` (double), `max_dist` (double) to determine the geo-fencing area. Node 2 has a `sensor_log` (uint8) parameter with a callback attached to trigger the logging of a data point.
 ```bash
 # procedure 0 (geo-fencing setup)
 proc new
 
+proc set _zero 0 1  # initialize a parameter to compare against
+
 proc binop lat - target_lat lat_diff 1  # calculate latitude difference
-proc ifelse lat_diff < 0 1  # negate if negative
+proc ifelse lat_diff < _zero 1  # negate if negative
 proc unop lat_diff - lat_diff 1
 proc noop
 
 proc binop lon - target_lon lon_diff 1 # calculate longitude difference
-proc ifelse lon_diff < 0 1  # negate if negative
+proc ifelse lon_diff < _zero 1  # negate if negative
 proc unop lon_diff - lon_diff 1
 proc noop
 
@@ -64,7 +66,7 @@ proc push 0 1  # push the procedure to slot 0 on node 1
 
 # procedure 1 (geo-fencing check)
 proc new
-proc block geo_check == 1 1  # block until vehicle is within the area
+proc block geo_check != _zero 1  # block until vehicle is within the area
 proc set sensor_log 1 2  # log a data point
 # optionally call itself recursively if the sensor should keep logging data points while the vehicle is in the area
 proc call 1 2
