@@ -71,3 +71,11 @@ And the FreeRTOS-based runtime has the following additional options:
 - `TASK_STORAGE_RECURSION_DEPTH_INDEX`: This option sets the index of the thread-local storage pointer for recursion depth tracking.
 
 Please note that the FreeRTOS-based runtime requires a `FreeRTOSConfig.h` file in the parent project. This configuration file should define `configNUM_THREAD_LOCAL_STORAGE_POINTER` to a value greater than 0, as the tracking of recursion depth is done using thread-local storage.
+
+Lastly, the library has the following meson build options:
+
+- `build_tests` (boolean, default: `false`): Build the test suite.
+- `slash` (boolean, default: `false`): Build slash (yields).
+- `freertos` (boolean, default: `false`): Build the default FreeRTOS-based runtime (yields).
+- `posix` (boolean, default: `false`): Build the default POSIX-based runtime (yields).
+- `proc_analysis` (boolean, default: `false`): Build the analysis module (required by the default runtime implementations).
