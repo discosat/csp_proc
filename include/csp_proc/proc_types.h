@@ -1,6 +1,10 @@
 #ifndef CSP_PROC_PROC_TYPES_H
 #define CSP_PROC_PROC_TYPES_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include <string.h>
 
@@ -98,5 +102,9 @@ typedef struct {
 	proc_instruction_t instructions[MAX_INSTRUCTIONS];
 	uint8_t instruction_count;
 } proc_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // CSP_PROC_PROC_TYPES_H

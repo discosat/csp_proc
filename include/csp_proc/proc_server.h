@@ -1,6 +1,10 @@
 #ifndef CSP_PROC_SERVER_H
 #define CSP_PROC_SERVER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <csp/csp_types.h>
 
 #define PROC_PORT_SERVER 14
@@ -47,5 +51,9 @@ typedef enum {
  * @param packet
  */
 void proc_serve(csp_packet_t * packet);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // CSP_PROC_SERVER_H

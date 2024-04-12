@@ -1,6 +1,10 @@
 #ifndef CSP_PROC_RUNTIME_H
 #define CSP_PROC_RUNTIME_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 #include <csp_proc/proc_types.h>
@@ -51,5 +55,9 @@ typedef enum {
 	IF_ELSE_FLAG_ERR = -2,
 	IF_ELSE_FLAG_ERR_TYPE = -3,
 } if_else_flag_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // CSP_PROC_RUNTIME_H

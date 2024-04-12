@@ -1,6 +1,10 @@
 #ifndef CSP_PROC_PACK_H
 #define CSP_PROC_PACK_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <csp/csp_types.h>
 #include <csp_proc/proc_types.h>
 
@@ -31,5 +35,9 @@ void free_proc(proc_t * procedure);
 int proc_copy_instruction(proc_instruction_t * instruction, proc_instruction_t * copy);
 
 int deepcopy_proc(proc_t * original, proc_t * copy);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // CSP_PROC_PACK_H

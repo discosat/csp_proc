@@ -1,6 +1,10 @@
 #ifndef CSP_PROC_PROC_STORE_H
 #define CSP_PROC_PROC_STORE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include <csp_proc/proc_types.h>
 
@@ -44,5 +48,9 @@ proc_t * get_proc(uint8_t slot);
  * @return A dynamically allocated array containing the slots of the procedures, terminated by -1. The caller is responsible for freeing this array.
  */
 int * get_proc_slots();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // CSP_PROC_PROC_STORE_H

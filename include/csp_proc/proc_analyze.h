@@ -1,6 +1,10 @@
 #ifndef CSP_PROC_PROC_ANALYZE_H
 #define CSP_PROC_PROC_ANALYZE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <csp_proc/proc_types.h>
 
 typedef struct {
@@ -47,5 +51,9 @@ typedef struct proc_analysis_config_t {
 void free_proc_analysis(proc_analysis_t * analysis);
 
 int proc_analyze(proc_t * proc, proc_analysis_t * analysis, proc_analysis_config_t * config);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // CSP_PROC_PROC_ANALYZE_H
