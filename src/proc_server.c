@@ -5,8 +5,29 @@
 
 #include <stdlib.h>
 #include <csp/csp_types.h>
+#include <csp/csp.h>
 
-int __attribute__((weak)) proc_runtime_run(uint8_t proc_slot);
+int proc_server_init() {
+	int ret = 0;
+
+	if (proc_store_init != NULL) {
+		csp_print("Initializing proc store\n");
+		ret = proc_store_init();
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	if (proc_runtime_init != NULL) {
+		csp_print("Initializing proc runtime\n");
+		ret = proc_runtime_init();
+		if (ret != 0) {
+			return ret;
+		}
+	}
+	csp_print("Proc server initialized\n");
+	return ret;
+}
 
 static void proc_serve_del_request(csp_packet_t * packet) {
 	uint8_t slot = packet->data[1];
@@ -22,7 +43,7 @@ static void proc_serve_del_request(csp_packet_t * packet) {
 static void proc_serve_pull_request(csp_packet_t * packet) {
 	uint8_t slot = packet->data[1];
 	proc_t * procedure = get_proc(slot);
-	if (procedure == NULL || procedure->instruction_count == 0) {
+	if (procedure == NULL) {
 		printf("Procedure not found\n");
 		packet->data[0] = PROC_PULL_RESPONSE;
 		packet->data[0] |= PROC_FLAG_END;
@@ -72,7 +93,17 @@ static void proc_serve_push_request(csp_packet_t * packet) {
 		return;
 	}
 
-	set_proc(procedure, packet->data[1], 1);
+	ret = set_proc(procedure, packet->data[1], 0);
+	if (ret < 0) {
+		printf("Failed to set procedure\n");
+		free_proc(procedure);
+		packet->data[0] = PROC_PUSH_RESPONSE;
+		packet->data[0] |= PROC_FLAG_END;
+		packet->data[0] |= PROC_FLAG_ERROR;
+		packet->length = 1;
+		csp_sendto_reply(packet, packet, CSP_O_SAME);
+		return;
+	}
 
 	packet->data[0] = PROC_PUSH_RESPONSE;
 	packet->data[0] |= PROC_FLAG_END;

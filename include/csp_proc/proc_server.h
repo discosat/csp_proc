@@ -46,6 +46,13 @@ typedef enum {
 #define PROC_FLAG_ERROR      0b01000000
 
 /**
+ * Conditionally initialize sub-components of the procedure server (proc_store, proc_runtime)
+ *
+ * @return 0 on success, -1 on failure
+ */
+int proc_server_init();
+
+/**
  * Handle incoming procedure requests
  *
  * @param packet

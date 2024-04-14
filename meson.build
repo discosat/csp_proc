@@ -12,8 +12,6 @@ csp_proc_inc = include_directories('include')
 csp_proc_src = files([
 	'src/proc_client.c',
 	'src/proc_pack.c',
-	'src/proc_server.c',
-	'src/proc_store.c',
 ])
 
 # Static & dynamic analysis
@@ -35,12 +33,28 @@ if get_option('slash') == true
 endif
 
 if get_option('posix') == true and get_option('freertos') == true
-    error('Cannot build with multiple runtimes enabled (choose one max)')
+    error('Cannot build for both POSIX and FreeRTOS (choose one max)')
+endif
+
+if get_option('posix') == false and get_option('freertos') == false
+	error('Must build for either POSIX or FreeRTOS (choose one)')
+endif
+
+if get_option('posix') == true
+	csp_proc_src += files([
+		'src/sync/proc_mutex_POSIX.c',
+	])
+endif
+
+if get_option('freertos') == true
+	csp_proc_src += files([
+		'src/sync/proc_mutex_FreeRTOS.c',
+	])
 endif
 
 # Default FreeRTOS-based runtime implementation
 freertos_dep = []
-if get_option('freertos') == true
+if get_option('freertos') == true and get_option('proc_runtime') == true
 	freertos_dep = dependency('freertos', fallback : ['freertos', 'freertos_dep'], required: false)
 	if freertos_dep.found()
 		csp_proc_src += files([
@@ -50,16 +64,42 @@ if get_option('freertos') == true
 			'src/proc_analyze.c',
 		])
 	endif
+	if get_option('proc_store_static') == false and get_option('proc_store_dynamic') == false
+		error('FreeRTOS runtime requires a proc store (e.g. proc_store_dynamic=true)')
+	endif
 endif
 
 # Default POSIX-based runtime implementation
 posix_dep = []
-if get_option('posix') == true
+if get_option('posix') == true and get_option('proc_runtime') == true
 	csp_proc_src += files([
 		'src/runtime/proc_runtime_instructions_common.c',
 		'src/runtime/proc_runtime_instructions_POSIX.c',
 		'src/runtime/proc_runtime_POSIX.c',
 		'src/proc_analyze.c',
+	])
+	if get_option('proc_store_static') == false and get_option('proc_store_dynamic') == false
+		error('POSIX runtime requires a proc store (e.g. proc_store_dynamic=true)')
+	endif
+endif
+
+if get_option('proc_store_static') == true and get_option('proc_store_dynamic') == true
+	error('Cannot build with multiple proc stores enabled (choose one max)')
+endif
+
+# Static store
+if get_option('proc_store_static') == true
+	csp_proc_src += files([
+		'src/store/proc_store_static.c',
+		'src/proc_server.c',  # proc server only makes sense with a proc store
+	])
+endif
+
+# Dynamic store
+if get_option('proc_store_dynamic') == true
+	csp_proc_src += files([
+		'src/store/proc_store_dynamic.c',
+		'src/proc_server.c',  # proc server only makes sense with a proc store
 	])
 endif
 
@@ -95,7 +135,7 @@ csp_proc_lib = static_library('csp_proc',
 	install : false
 )
 
-csp_proc_dep = declare_dependency(include_directories : csp_proc_inc, link_with : csp_proc_lib)
+csp_proc_dep = declare_dependency(include_directories : csp_proc_inc, link_with : csp_proc_lib, dependencies : [csp_dep, param_dep])
 
 
 # Tests

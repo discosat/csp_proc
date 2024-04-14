@@ -34,7 +34,7 @@ extern "C" {
  *
  * @return 0 on success, -1 on failure
  */
-int proc_runtime_init();
+int __attribute__((weak)) proc_runtime_init();
 
 /**
  * Run a procedure stored in a given slot.
@@ -43,7 +43,7 @@ int proc_runtime_init();
  *
  * @return 0 on success, -1 on failure
  */
-int proc_runtime_run(uint8_t proc_slot);
+int __attribute__((weak)) proc_runtime_run(uint8_t proc_slot);
 
 /**
  * Used to indicate the result of an if-else instruction in an instruction handler.

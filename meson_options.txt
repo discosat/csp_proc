@@ -1,9 +1,12 @@
 option('build_tests', type: 'boolean', value: false, description: 'Build the test suite')
 
-option('slash', type: 'boolean', value: false, description: 'Build slash (yields)', yield: true)
-option('freertos', type: 'boolean', value: false, description: 'Build the default FreeRTOS-based runtime (yields)', yield: true)
-option('posix', type: 'boolean', value: false, description: 'Build the default POSIX-based runtime (yields)', yield: true)
+option('slash', type: 'boolean', value: false, description: 'Build slash', yield: true)
+option('freertos', type: 'boolean', value: false, description: 'Build for FreeRTOS system', yield: true)
+option('posix', type: 'boolean', value: true, description: 'Build for POSIX system', yield: true)
+option('proc_runtime', type: 'boolean', value: false, description: 'Build the runtime module')
 option('proc_analysis', type: 'boolean', value: false, description: 'Build the analysis module')
+option('proc_store_static', type: 'boolean', value: false, description: 'Build the proc store with static memory allocation')
+option('proc_store_dynamic', type: 'boolean', value: true, description: 'Build the proc store with dynamic memory allocation')
 
 option('RESERVED_PROC_SLOTS', type : 'string', value : '', description : 'The number of reserved procedure slots.')
 option('MAX_PROC_BLOCK_TIMEOUT_MS', type : 'string', value : '', description : 'The maximum time block instructions will wait before timing out.')
