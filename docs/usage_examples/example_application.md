@@ -122,7 +122,6 @@ Integrating `csp_proc` into the application is as simple as adding the following
 
 ```c
 // (...)
-#include <csp_proc/proc_runtime.h>
 #include <csp_proc/proc_server.h>
 
 // (...)
@@ -130,7 +129,7 @@ Integrating `csp_proc` into the application is as simple as adding the following
 int main() {
     // (...)
 
-    proc_runtime_init();
+    proc_server_init();
     csp_bind_callback(proc_serve, PROC_PORT_SERVER);
 
     // (...)
@@ -145,17 +144,19 @@ To build the application with `csp_proc`, you'll need to add the `csp_proc` depe
 ```meson
 project((...), default_options: [
     (...)
-    'csp_proc:slash=false',
     'csp_proc:posix=true',
+    'csp_proc:proc_runtime=true',
     (...)
 ])
 
 (...)
 
-deps += dependency('csp_proc', fallback: ['csp_proc', 'csp_proc_dep'])
+deps += dependency('csp_proc', fallback: ['csp_proc', 'csp_proc_dep']).as_link_whole()
 
 (...)
 ```
+
+Remember to add `.as_link_whole()` to the dependency to avoid link-time optimization issues.
 
 ## Running procedures
 You can now build and run the application, after which your node will be available on the network and ready to run procedures. To interact with the network, setup a simple client e.g. using the `slash` commands provided by `csp_proc`. Refer to [discosat/csh](https://github.com/discosat/csh) for an example client implementation. The build setup in that repository also provides utility called `zmqproxy` that can be used to connect the nodes together. In summary, when everything is compiled, you can run the following commands to start the application and connect to the network:

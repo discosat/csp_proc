@@ -7,7 +7,8 @@ The following demonstrates the outline of a `meson.build` file in a parent proje
 project(..., subproject_dir: 'lib', default_options: [
 	'csp_proc:slash=false',
 	'csp_proc:freertos=false',
-	'csp_proc:posix=false',
+	'csp_proc:posix=true',
+	'csp_proc:proc_runtime=true',
 	'csp_proc:RESERVED_PROC_SLOTS=...',
     ...
 ])
@@ -15,7 +16,7 @@ project(..., subproject_dir: 'lib', default_options: [
 deps = []
 deps += dependency('csp', fallback: ['libcsp', 'csp_dep'])
 deps += dependency('param', fallback: ['libparam', 'param_dep'])
-deps += dependency('csp_proc', fallback: ['csp_proc', 'csp_proc_dep'])
+deps += dependency('csp_proc', fallback: ['csp_proc', 'csp_proc_dep']).as_link_whole()
 
 app = executable(...
 	dependencies : deps,
@@ -23,19 +24,26 @@ app = executable(...
 )
 ```
 
-Note that `csp_proc` is not a standalone library. The core part of the library depends on `libparam` and `libcsp`, while optional parts depend on `slash` and the FreeRTOS kernel or POSIX threads. A reference setup can be found in the following [Dockerfile](https://github.com/discosat/csp_proc/blob/main/Dockerfile), which is the environment that's used to run the automated tests in the CI pipeline.
+Note that `csp_proc` is not a standalone library. The core part of the library depends on `libparam` and `libcsp`, while optional parts depend on `slash` and the FreeRTOS kernel or POSIX functionality. A reference setup can be found in the following [Dockerfile](https://github.com/discosat/csp_proc/blob/main/Dockerfile), which is the environment that's used to run the automated tests in the CI pipeline.
 
 ## Composition of the library
 The library has the following components:
 ### Core
 The core part of the library consists of the following files:
-- `proc_analyze.(h|c)`: Functions for analyzing procedures.
+- _Optional_ `proc_analyze.(h|c)`: Functions for analyzing procedures (Will automatically be included if runtime is enabled)
 - `proc_client.(h|c)`: Client-side functions, e.g. request to push procedure over CSP network.
+- `proc_mutex.h`: Mutex for controlling access to relevant data structures.
+	- `sync/proc_mutex_FreeRTOS.c`: FreeRTOS-specific mutex implementation.
+	- `sync/proc_mutex_POSIX.c`: POSIX-specific mutex implementation.
 - `proc_pack.(h|c)`: Functions for packing and unpacking procedures into CSP packets.
 - `proc_runtime.h`: Runtime interface as expected by the core library.
-- `proc_server.(h|c)`: Server-side functions, e.g. handling incoming procedure requests.
-- `proc_store.(h|c)`: Functions for storing and retrieving procedures in a local procedure table.
+- _Optional_`proc_server.(h|c)`: Server-side functions, e.g. handling incoming procedure requests (Will automatically be included if procedure storage is enabled)
+- `proc_store.h`: Functions for storing and retrieving procedures in a local procedure table.
 - `proc_types.h`: Procedure data type, including the procedure structure and the instruction structure.
+
+### Storage
+- _Optional_ `proc_store_dynamic.h`: Procedure storage using dynamic memory allocation.
+- _Optional_ `proc_store_static.h`: Procedure storage using static memory allocation.
 
 ### Runtime
 - _Optional_ `runtime/proc_runtime_FreeRTOS.c`: FreeRTOS-based runtime for `csp_proc`.
@@ -74,8 +82,10 @@ Please note that the FreeRTOS-based runtime requires a `FreeRTOSConfig.h` file i
 
 Lastly, the library has the following meson build options:
 
-- `build_tests` (boolean, default: `false`): Build the test suite.
-- `slash` (boolean, default: `false`): Build slash (yields).
-- `freertos` (boolean, default: `false`): Build the default FreeRTOS-based runtime (yields).
-- `posix` (boolean, default: `false`): Build the default POSIX-based runtime (yields).
-- `proc_analysis` (boolean, default: `false`): Build the analysis module (required by the default runtime implementations).
+- `slash` (boolean, default: `false`): Build slash.
+- `freertos` (boolean, default: `false`): Build for FreeRTOS system.
+- `posix` (boolean, default: `true`): Build for POSIX system.
+- `proc_runtime` (boolean, default: `false`): Build the runtime module.
+- `proc_analysis` (boolean, default: `false`): Build the analysis module.
+- `proc_store_static` (boolean, default: `false`): Build the proc store with static memory allocation.
+- `proc_store_dynamic` (boolean, default: `true`): Build the proc store with dynamic memory allocation.
