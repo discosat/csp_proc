@@ -32,9 +32,12 @@ The library has the following components:
 The core part of the library consists of the following files:
 - _Optional_ `proc_analyze.(h|c)`: Functions for analyzing procedures (Will automatically be included if runtime is enabled)
 - `proc_client.(h|c)`: Client-side functions, e.g. request to push procedure over CSP network.
+- `proc_memory.h`: Platform-agnostic memory management functions interface (malloc, free, etc.).
+	- `platform/proc_memory_FreeRTOS.c`: FreeRTOS-specific memory management.
+	- `platform/proc_memory_POSIX.c`: POSIX-specific memory management.
 - `proc_mutex.h`: Mutex for controlling access to relevant data structures.
-	- `sync/proc_mutex_FreeRTOS.c`: FreeRTOS-specific mutex implementation.
-	- `sync/proc_mutex_POSIX.c`: POSIX-specific mutex implementation.
+	- `platform/proc_mutex_FreeRTOS.c`: FreeRTOS-specific mutex implementation.
+	- `platform/proc_mutex_POSIX.c`: POSIX-specific mutex implementation.
 - `proc_pack.(h|c)`: Functions for packing and unpacking procedures into CSP packets.
 - `proc_runtime.h`: Runtime interface as expected by the core library.
 - _Optional_`proc_server.(h|c)`: Server-side functions, e.g. handling incoming procedure requests (Will automatically be included if procedure storage is enabled)
