@@ -68,6 +68,8 @@ The following options can be configured at compile-time:
 - `MIN_PROC_BLOCK_PERIOD_MS`: This option sets the minimum time (in milliseconds) between evaluations of a block instruction's condition.
 - `MAX_PROC_RECURSION_DEPTH`: This option sets the maximum recursion depth of a procedure.
 - `MAX_PROC_CONCURRENT`: This option sets the maximum number of procedure runtimes that can run concurrently.
+- `MAX_INSTRUCTIONS`: This option sets the maximum number of instructions in a procedure.
+- `MAX_PROC_SLOT`: This option sets the maximum procedure slot number (i.e. number of procedures - 1).
 
 In addition to the above, the default runtime implementations have their own set of configuration options:
 
