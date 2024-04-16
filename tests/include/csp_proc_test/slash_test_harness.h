@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include <slash/slash.h>
+#include <csp_proc/proc_memory.h>
 
 int proc_new(struct slash * slash);
 int proc_del(struct slash * slash);
@@ -44,7 +45,7 @@ int known_hosts_get_node(char * find_name) {
 int proc_slash_command(const char * command) {
 	struct slash slash = {0};
 
-	char * command_copy = strdup(command);
+	char * command_copy = proc_strdup(command);
 	char * argv[32];
 	int argc = 0;
 	char * token = strtok(command_copy, " ");
@@ -108,7 +109,7 @@ int proc_slash_command(const char * command) {
 		result = SLASH_EINVAL;
 	}
 
-	free(command_copy);
+	proc_free(command_copy);
 
 	return result;
 }

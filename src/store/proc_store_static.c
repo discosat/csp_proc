@@ -1,6 +1,6 @@
 #include <csp_proc/proc_store.h>
 #include <csp_proc/proc_mutex.h>
-#include <stdlib.h>
+#include <csp_proc/proc_memory.h>
 
 proc_t proc_store[MAX_PROC_SLOT + 1] = {0};
 proc_mutex_t * proc_store_mutex = NULL;
@@ -84,7 +84,7 @@ proc_t * get_proc(uint8_t slot) {
 }
 
 int * get_proc_slots() {
-	int * slots = malloc((MAX_PROC_SLOT + 2) * sizeof(int));
+	int * slots = proc_malloc((MAX_PROC_SLOT + 2) * sizeof(int));
 	int count = 0;
 
 	if (proc_mutex_take(proc_store_mutex) != PROC_MUTEX_OK) {

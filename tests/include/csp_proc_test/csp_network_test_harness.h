@@ -53,6 +53,7 @@
 
 #include <csp_proc/proc_server.h>
 #include <csp_proc/proc_runtime.h>
+#include <csp_proc/proc_memory.h>
 
 typedef struct {
 	csp_iface_t * iface;
@@ -123,7 +124,7 @@ uint32_t serial_get(void) {
 }
 
 static csp_node_fixture_t * csp_node_setup(int addr) {
-	csp_node_fixture_t * fixture = malloc(sizeof(csp_node_fixture_t));
+	csp_node_fixture_t * fixture = proc_malloc(sizeof(csp_node_fixture_t));
 
 	srand(time(NULL));
 	serial_init();
@@ -159,7 +160,7 @@ static csp_node_fixture_t * csp_node_setup(int addr) {
 
 static void csp_node_teardown(csp_node_fixture_t * fixture) {
 	if (fixture != NULL) {
-		free(fixture);
+		proc_free(fixture);
 	}
 }
 

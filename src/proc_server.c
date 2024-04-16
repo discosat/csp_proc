@@ -2,6 +2,7 @@
 #include <csp_proc/proc_pack.h>
 #include <csp_proc/proc_store.h>
 #include <csp_proc/proc_runtime.h>
+#include <csp_proc/proc_memory.h>
 
 #include <stdlib.h>
 #include <csp/csp_types.h>
@@ -71,7 +72,7 @@ static void proc_serve_pull_request(csp_packet_t * packet) {
 }
 
 static void proc_serve_push_request(csp_packet_t * packet) {
-	proc_t * procedure = malloc(sizeof(proc_t));
+	proc_t * procedure = proc_malloc(sizeof(proc_t));
 	if (procedure == NULL) {
 		printf("Failed to allocate memory for procedure\n");
 		packet->data[0] = PROC_PUSH_RESPONSE;
@@ -124,7 +125,7 @@ static void proc_serve_slots_request(csp_packet_t * packet) {
 		packet->length++;
 	}
 
-	free(slots);
+	proc_free(slots);
 	csp_sendto_reply(packet, packet, CSP_O_SAME);
 }
 

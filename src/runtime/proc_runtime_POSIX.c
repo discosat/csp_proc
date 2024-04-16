@@ -2,6 +2,7 @@
 
 #include <csp_proc/proc_runtime.h>
 #include <csp_proc/proc_analyze.h>
+#include <csp_proc/proc_memory.h>
 
 #include <csp/csp.h>
 
@@ -47,7 +48,7 @@ int proc_stop_runtime_thread(pthread_t thread) {
 			pthread_join(running_threads[i].thread, NULL);
 			free_proc(running_threads[i].proc);
 			running_threads[i] = running_threads[running_threads_count - 1];
-			running_threads = realloc(running_threads, --running_threads_count * sizeof(thread_t));
+			running_threads = proc_realloc(running_threads, --running_threads_count * sizeof(thread_t));
 			break;
 		}
 	}
@@ -76,10 +77,10 @@ void * runtime_thread(void * pvParameters) {
 
 	// Perform static analysis
 	proc_analysis_config_t analysis_config = {
-		.analyzed_procs = calloc(MAX_PROC_SLOT + 1, sizeof(int)),
-		.analyses = calloc(MAX_PROC_SLOT + 1, sizeof(proc_analysis_t *)),
+		.analyzed_procs = proc_calloc(MAX_PROC_SLOT + 1, sizeof(int)),
+		.analyses = proc_calloc(MAX_PROC_SLOT + 1, sizeof(proc_analysis_t *)),
 		.analyzed_proc_count = 0};
-	proc_analysis_t * analysis = malloc(sizeof(proc_analysis_t));
+	proc_analysis_t * analysis = proc_malloc(sizeof(proc_analysis_t));
 	if (analysis == NULL) {
 		csp_print("Error allocating memory for analysis\n");
 		return NULL;
@@ -103,7 +104,7 @@ void * runtime_thread(void * pvParameters) {
 	for (size_t i = 0; i < running_threads_count; i++) {
 		if (pthread_equal(running_threads[i].thread, thread)) {
 			running_threads[i] = running_threads[running_threads_count - 1];
-			running_threads = realloc(running_threads, --running_threads_count * sizeof(thread_t));
+			running_threads = proc_realloc(running_threads, --running_threads_count * sizeof(thread_t));
 			break;
 		}
 	}
@@ -133,7 +134,7 @@ int proc_runtime_run(uint8_t proc_slot) {
 	}
 
 	// Copy procedure to detach from proc store
-	proc_t * detached_proc = malloc(sizeof(proc_t));
+	proc_t * detached_proc = proc_malloc(sizeof(proc_t));
 	if (deepcopy_proc(stored_proc, detached_proc) != 0) {
 		csp_print("Failed to copy procedure\n");
 		return -1;
@@ -150,7 +151,7 @@ int proc_runtime_run(uint8_t proc_slot) {
 	}
 
 	// Add thread to array
-	running_threads = realloc(running_threads, ++running_threads_count * sizeof(thread_t));
+	running_threads = proc_realloc(running_threads, ++running_threads_count * sizeof(thread_t));
 	running_threads[running_threads_count - 1] = (thread_t){.proc = detached_proc, .thread = thread};
 	pthread_mutex_unlock(&running_threads_mutex);
 

@@ -55,6 +55,7 @@ Additionally, this adds the following commands to handle control-flow and operat
 #include <csp_proc/proc_types.h>
 #include <csp_proc/proc_client.h>
 #include <csp_proc/proc_pack.h>
+#include <csp_proc/proc_memory.h>
 
 slash_command_group(proc, "Stored procedures");
 
@@ -143,7 +144,7 @@ int proc_new(struct slash * slash) {
 		current_procedure = NULL;
 	}
 
-	proc_t * _new_proc = malloc(sizeof(proc_t));
+	proc_t * _new_proc = proc_malloc(sizeof(proc_t));
 	if (_new_proc == NULL) {
 		printf("Failed to allocate memory for new procedure\n");
 		return SLASH_ENOMEM;
@@ -244,7 +245,7 @@ int proc_pull(struct slash * slash) {
 		current_procedure = NULL;
 	}
 
-	current_procedure = malloc(sizeof(proc_t));
+	current_procedure = proc_malloc(sizeof(proc_t));
 	int ret = proc_pull_request(current_procedure, proc_slot, node, timeout);
 	if (ret != 0) {
 		printf("Failed to pull procedure from slot %d on node %d with return code %d\n", proc_slot, node, ret);
@@ -521,7 +522,7 @@ int proc_block(struct slash * slash) {
 		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-	char * param_a = strdup(slash->argv[argi]);
+	char * param_a = proc_strdup(slash->argv[argi]);
 
 	if (++argi >= slash->argc) {
 		printf("Argument <op> (char*) required\n");
@@ -541,7 +542,7 @@ int proc_block(struct slash * slash) {
 		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-	char * param_b = strdup(slash->argv[argi]);
+	char * param_b = proc_strdup(slash->argv[argi]);
 
 	if (param_a == NULL || param_b == NULL) {
 		printf("Failed to allocate memory for parameters\n");
@@ -591,7 +592,7 @@ int proc_ifelse(struct slash * slash) {
 		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-	char * param_a = strdup(slash->argv[argi]);
+	char * param_a = proc_strdup(slash->argv[argi]);
 
 	if (++argi >= slash->argc) {
 		printf("Argument <op> (char*) required\n");
@@ -611,7 +612,7 @@ int proc_ifelse(struct slash * slash) {
 		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-	char * param_b = strdup(slash->argv[argi]);
+	char * param_b = proc_strdup(slash->argv[argi]);
 
 	if (param_a == NULL || param_b == NULL) {
 		printf("Failed to allocate memory for parameters\n");
@@ -689,14 +690,14 @@ int proc_set(struct slash * slash) {
 		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-	char * param = strdup(slash->argv[argi]);
+	char * param = proc_strdup(slash->argv[argi]);
 
 	if (++argi >= slash->argc) {
 		printf("Argument <value> (char*) required\n");
 		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-	char * value = strdup(slash->argv[argi]);
+	char * value = proc_strdup(slash->argv[argi]);
 
 	if (param == NULL || value == NULL) {
 		printf("Failed to allocate memory for parameters\n");
@@ -746,7 +747,7 @@ int proc_unop(struct slash * slash) {
 		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-	char * param = strdup(slash->argv[argi]);
+	char * param = proc_strdup(slash->argv[argi]);
 
 	if (++argi >= slash->argc) {
 		printf("Argument <op> (char*) required\n");
@@ -765,7 +766,7 @@ int proc_unop(struct slash * slash) {
 		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-	char * result = strdup(slash->argv[argi]);
+	char * result = proc_strdup(slash->argv[argi]);
 
 	if (param == NULL || result == NULL) {
 		printf("Failed to allocate memory for parameters\n");
@@ -815,7 +816,7 @@ int proc_binop(struct slash * slash) {
 		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-	char * param_a = strdup(slash->argv[argi]);
+	char * param_a = proc_strdup(slash->argv[argi]);
 
 	if (++argi >= slash->argc) {
 		printf("Argument <op> (char*) required\n");
@@ -835,14 +836,14 @@ int proc_binop(struct slash * slash) {
 		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-	char * param_b = strdup(slash->argv[argi]);
+	char * param_b = proc_strdup(slash->argv[argi]);
 
 	if (++argi >= slash->argc) {
 		printf("Argument <result> (char*) required\n");
 		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-	char * result = strdup(slash->argv[argi]);
+	char * result = proc_strdup(slash->argv[argi]);
 
 	if (param_a == NULL || param_b == NULL || result == NULL) {
 		printf("Failed to allocate memory for parameters\n");

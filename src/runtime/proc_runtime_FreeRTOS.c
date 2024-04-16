@@ -2,6 +2,7 @@
 
 #include <csp_proc/proc_runtime.h>
 #include <csp_proc/proc_analyze.h>
+#include <csp_proc/proc_memory.h>
 
 #include <csp/csp.h>
 
@@ -54,7 +55,7 @@ int proc_stop_runtime_task(TaskHandle_t task_handle) {
 			vTaskDelete(running_tasks[i].task_handle);
 			free_proc(running_tasks[i].proc);
 			running_tasks[i] = running_tasks[running_tasks_count - 1];
-			running_tasks = realloc(running_tasks, --running_tasks_count * sizeof(task_t));
+			running_tasks = proc_realloc(running_tasks, --running_tasks_count * sizeof(task_t));
 			break;
 		}
 	}
@@ -83,10 +84,10 @@ void runtime_task(void * pvParameters) {
 
 	// Perform static analysis
 	proc_analysis_config_t analysis_config = {
-		.analyzed_procs = calloc(MAX_PROC_SLOT + 1, sizeof(int)),
-		.analyses = calloc(MAX_PROC_SLOT + 1, sizeof(proc_analysis_t *)),
+		.analyzed_procs = proc_calloc(MAX_PROC_SLOT + 1, sizeof(int)),
+		.analyses = proc_calloc(MAX_PROC_SLOT + 1, sizeof(proc_analysis_t *)),
 		.analyzed_proc_count = 0};
-	proc_analysis_t * analysis = malloc(sizeof(proc_analysis_t));
+	proc_analysis_t * analysis = proc_malloc(sizeof(proc_analysis_t));
 	if (analysis == NULL) {
 		csp_print("Error allocating memory for analysis\n");
 		return -1;
@@ -110,7 +111,7 @@ void runtime_task(void * pvParameters) {
 	for (size_t i = 0; i < running_tasks_count; i++) {
 		if (running_tasks[i].task_handle == task_handle) {
 			running_tasks[i] = running_tasks[running_tasks_count - 1];
-			running_tasks = realloc(running_tasks, --running_tasks_count * sizeof(task_t));
+			running_tasks = proc_realloc(running_tasks, --running_tasks_count * sizeof(task_t));
 			break;
 		}
 	}
@@ -140,7 +141,7 @@ int proc_runtime_run(uint8_t proc_slot) {
 	}
 
 	// Copy procedure to detach from proc store
-	proc_t * detached_proc = malloc(sizeof(proc_t));
+	proc_t * detached_proc = proc_malloc(sizeof(proc_t));
 	if (deepcopy_proc(stored_proc, detached_proc) != 0) {
 		csp_print("Failed to copy procedure\n");
 		return -1;
@@ -166,7 +167,7 @@ int proc_runtime_run(uint8_t proc_slot) {
 	}
 
 	// Add task to array
-	running_tasks = realloc(running_tasks, ++running_tasks_count * sizeof(task_t));
+	running_tasks = proc_realloc(running_tasks, ++running_tasks_count * sizeof(task_t));
 	running_tasks[running_tasks_count - 1] = (task_t){.proc = detached_proc, .task_handle = task_handle};
 	xSemaphoreGive(running_tasks_mutex);
 

@@ -42,13 +42,15 @@ endif
 
 if get_option('posix') == true
 	csp_proc_src += files([
-		'src/sync/proc_mutex_POSIX.c',
+		'src/platform/proc_memory_POSIX.c',
+		'src/platform/proc_mutex_POSIX.c',
 	])
 endif
 
 if get_option('freertos') == true
 	csp_proc_src += files([
-		'src/sync/proc_mutex_FreeRTOS.c',
+		'src/platform/proc_memory_FreeRTOS.c',
+		'src/platform/proc_mutex_FreeRTOS.c',
 	])
 endif
 

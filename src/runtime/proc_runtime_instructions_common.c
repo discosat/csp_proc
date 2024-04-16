@@ -7,6 +7,7 @@
 #include <csp_proc/proc_types.h>
 #include <csp_proc/proc_runtime.h>
 #include <csp_proc/proc_analyze.h>
+#include <csp_proc/proc_memory.h>
 
 #ifndef PARAM_REMOTE_TIMEOUT_MS
 #define PARAM_REMOTE_TIMEOUT_MS (1000)
@@ -180,7 +181,7 @@ param_t * proc_fetch_param(char * param_name, int node) {
 	param_t * param = NULL;
 
 	// Check if parameter is an array element
-	char * param_name_copy = strdup(param_name);
+	char * param_name_copy = proc_strdup(param_name);
 	int offset = proc_param_scan_offset(param_name_copy);
 	if (offset != -1) {
 		int index_length = snprintf(NULL, 0, "%d", offset);
@@ -202,7 +203,7 @@ param_t * proc_fetch_param(char * param_name, int node) {
 	if (is_remote_param) {  // TODO: Don't download list every time
 		int remote_params = param_list_download(node, PARAM_REMOTE_TIMEOUT_MS, 2, 1);
 		if (remote_params < 0) {
-			free(param_name_copy);
+			proc_free(param_name_copy);
 			return NULL;
 		}
 	}
@@ -218,7 +219,7 @@ param_t * proc_fetch_param(char * param_name, int node) {
 		if (param->node != node) {
 			for (int i = 0; i < 10; i++) {
 				if (node == local_addrs[i] && param->node == 0) {
-					free(param_name_copy);
+					proc_free(param_name_copy);
 					return param;
 				}
 			}
@@ -230,14 +231,14 @@ param_t * proc_fetch_param(char * param_name, int node) {
 		}
 
 		if (param_pull_single(param, offset, CSP_PRIO_NORM, 0, node, PARAM_REMOTE_TIMEOUT_MS, 2) < 0) {
-			free(param_name_copy);
+			proc_free(param_name_copy);
 			return NULL;
 		}
 
 		break;
 	}
 
-	free(param_name_copy);
+	proc_free(param_name_copy);
 	return param;
 }
 

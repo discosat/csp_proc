@@ -1,5 +1,6 @@
 #include <csp_proc/proc_analyze.h>
 #include <csp_proc/proc_store.h>
+#include <csp_proc/proc_memory.h>
 
 /**
  * Free all memory associated with a proc_analysis_t.
@@ -14,10 +15,10 @@ void free_proc_analysis(proc_analysis_t * analysis) {
 		}
 	}
 
-	free(analysis->sub_analyses);
-	free(analysis->procedure_slots);
-	free(analysis->instruction_analyses);
-	free(analysis);
+	proc_free(analysis->sub_analyses);
+	proc_free(analysis->procedure_slots);
+	proc_free(analysis->instruction_analyses);
+	proc_free(analysis);
 }
 
 int analyze_tail_call(proc_t * proc, uint8_t i, proc_instruction_analysis_t * instruction_analysis) {
@@ -90,7 +91,7 @@ int proc_analyze(proc_t * proc, proc_analysis_t * analysis, proc_analysis_config
 	analysis->procedure_slots = NULL;
 	analysis->procedure_slot_count = 0;
 
-	analysis->instruction_analyses = calloc(proc->instruction_count, sizeof(proc_instruction_analysis_t));
+	analysis->instruction_analyses = proc_calloc(proc->instruction_count, sizeof(proc_instruction_analysis_t));
 	if (analysis->instruction_analyses == NULL) {
 		printf("Error allocating memory for instruction_analyses\n");
 		return -1;
@@ -109,7 +110,7 @@ int proc_analyze(proc_t * proc, proc_analysis_t * analysis, proc_analysis_config
 		if (instruction->type == PROC_CALL) {
 			// Special handling for call instructions which require recursive analysis
 
-			analysis->procedure_slots = realloc(analysis->procedure_slots, (analysis->procedure_slot_count + 1) * sizeof(uint8_t));
+			analysis->procedure_slots = proc_realloc(analysis->procedure_slots, (analysis->procedure_slot_count + 1) * sizeof(uint8_t));
 			if (analysis->procedure_slots == NULL) {
 				printf("Error reallocating memory for procedure_slots\n");
 				return -1;
@@ -118,7 +119,7 @@ int proc_analyze(proc_t * proc, proc_analysis_t * analysis, proc_analysis_config
 			analysis->procedure_slots[analysis->procedure_slot_count] = instruction->instruction.call.procedure_slot;
 			analysis->procedure_slot_count++;
 
-			analysis->sub_analyses = realloc(analysis->sub_analyses, (analysis->sub_analysis_count + 1) * sizeof(proc_analysis_t *));
+			analysis->sub_analyses = proc_realloc(analysis->sub_analyses, (analysis->sub_analysis_count + 1) * sizeof(proc_analysis_t *));
 			if (analysis->sub_analyses == NULL) {
 				printf("Error reallocating memory for sub_analyses\n");
 				return -1;
@@ -136,7 +137,7 @@ int proc_analyze(proc_t * proc, proc_analysis_t * analysis, proc_analysis_config
 				// Procedure is already in the call stack
 				sub_analysis = config->analyses[instruction->instruction.call.procedure_slot];
 			} else {
-				sub_analysis = malloc(sizeof(proc_analysis_t));
+				sub_analysis = proc_malloc(sizeof(proc_analysis_t));
 				if (sub_analysis == NULL) {
 					printf("Error allocating memory for sub_analysis\n");
 					return -1;
@@ -164,7 +165,7 @@ int proc_analyze(proc_t * proc, proc_analysis_t * analysis, proc_analysis_config
  * @param slot_count The number of procedure slots in the array
  */
 void collect_proc_slots(proc_analysis_t * analysis, uint8_t ** slots, size_t * slot_count) {
-	*slots = realloc(*slots, (*slot_count + analysis->procedure_slot_count) * sizeof(uint8_t));
+	*slots = proc_realloc(*slots, (*slot_count + analysis->procedure_slot_count) * sizeof(uint8_t));
 	memcpy(*slots + *slot_count, analysis->procedure_slots, analysis->procedure_slot_count * sizeof(uint8_t));
 	*slot_count += analysis->procedure_slot_count;
 
