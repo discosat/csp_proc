@@ -11,7 +11,7 @@
 #include <task.h>
 
 #ifndef PROC_RUNTIME_TASK_SIZE
-#define PROC_RUNTIME_TASK_SIZE (256U)
+#define PROC_RUNTIME_TASK_SIZE (512U)
 #endif
 
 #ifndef PROC_RUNTIME_TASK_PRIORITY

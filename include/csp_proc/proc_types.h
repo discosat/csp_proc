@@ -8,8 +8,13 @@ extern "C" {
 #include <stdint.h>
 #include <string.h>
 
-#define MAX_INSTRUCTIONS 255  // one less than 2^8 because instruction_count would overflow back to 0 when instruction buffer is full
-#define MAX_PROC_SLOT    255
+#ifndef MAX_INSTRUCTIONS
+#define MAX_INSTRUCTIONS 255
+#endif  // max one less than 2^8 because instruction_count would overflow back to 0 when instruction buffer is full
+
+#ifndef MAX_PROC_SLOT
+#define MAX_PROC_SLOT 255
+#endif
 
 #ifndef RESERVED_PROC_SLOTS
 #define RESERVED_PROC_SLOTS 0

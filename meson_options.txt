@@ -13,3 +13,5 @@ option('MAX_PROC_BLOCK_TIMEOUT_MS', type : 'string', value : '', description : '
 option('MIN_PROC_BLOCK_PERIOD_MS', type : 'string', value : '', description : 'The minimum time between evaluating the condition of a block instruction.')
 option('MAX_PROC_RECURSION_DEPTH', type : 'string', value : '', description : 'The maximum recursion depth of a procedure.')
 option('MAX_PROC_CONCURRENT', type : 'string', value : '', description : 'The maximum number of procedures runtimes that can run concurrently.')
+option('MAX_INSTRUCTIONS', type : 'string', value : '', description : 'The maximum number of instructions a procedure can contain')
+option('MAX_PROC_SLOT', type : 'string', value : '', description : 'The largest procedure slot (number of procedures - 1)')

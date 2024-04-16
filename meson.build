@@ -111,6 +111,8 @@ max_proc_block_timeout_ms = get_option('MAX_PROC_BLOCK_TIMEOUT_MS')
 min_proc_block_period_ms = get_option('MIN_PROC_BLOCK_PERIOD_MS')
 max_proc_recursion_depth = get_option('MAX_PROC_RECURSION_DEPTH')
 max_proc_concurrent = get_option('MAX_PROC_CONCURRENT')
+max_instructions = get_option('MAX_INSTRUCTIONS')
+max_proc_slot = get_option('MAX_PROC_SLOT')
 
 if reserved_proc_slots != ''
     add_project_arguments('-DRESERVED_PROC_SLOTS=' + reserved_proc_slots, language : 'c')
@@ -127,7 +129,12 @@ endif
 if max_proc_concurrent != ''
     add_project_arguments('-DMAX_PROC_CONCURRENT=' + max_proc_concurrent, language : 'c')
 endif
-
+if max_instructions != ''
+    add_project_arguments('-DMAX_INSTRUCTIONS=' + max_instructions, language : 'c')
+endif
+if max_proc_slot != ''
+    add_project_arguments('-DMAX_PROC_SLOT=' + max_proc_slot, language : 'c')
+endif
 
 # Final library
 csp_proc_lib = static_library('csp_proc',
