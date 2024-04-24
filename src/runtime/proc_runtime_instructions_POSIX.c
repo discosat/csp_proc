@@ -14,7 +14,7 @@ int proc_runtime_unop(proc_instruction_t * instruction);
 int proc_runtime_binop(proc_instruction_t * instruction);
 int proc_runtime_call(proc_instruction_t * instruction, proc_analysis_t ** analysis, proc_t ** proc, int * i, if_else_flag_t * _if_else_flag);
 
-pthread_key_t recursion_depth_key;
+extern pthread_key_t recursion_depth_key;
 
 /**
  * Execute a block instruction.
