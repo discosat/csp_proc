@@ -162,16 +162,19 @@ double float_abs(double x) {
 }
 
 int proc_param_scan_offset(char * arg) {
+	char * arg_copy = proc_strdup(arg);
 	char * saveptr;
 	char * token;
 	int offset = -1;
 
-	strtok_r(arg, "[", &saveptr);
+	strtok_r(arg_copy, "[", &saveptr);
 	token = strtok_r(NULL, "[", &saveptr);
 	if (token != NULL) {
 		sscanf(token, "%d", &offset);
 		*token = '\0';
 	}
+
+	proc_free(arg_copy);
 
 	return offset;
 }
@@ -185,7 +188,7 @@ param_t * proc_fetch_param(char * param_name, int node) {
 	int offset = proc_param_scan_offset(param_name_copy);
 	if (offset != -1) {
 		int index_length = snprintf(NULL, 0, "%d", offset);
-		param_name_copy[strlen(param_name_copy) - index_length + 1] = '\0';
+		param_name_copy[strlen(param_name_copy) - (index_length + 2)] = '\0';
 	}
 
 	csp_iface_t * ifaces = csp_iflist_get();
