@@ -21,7 +21,7 @@ int __attribute__((weak)) delete_proc(uint8_t slot);
 /**
  * Reset the procedure storage.
  */
-void __attribute__((weak)) reset_proc_store();
+int __attribute__((weak)) reset_proc_store();
 
 /**
  * Initialize the procedure storage and any necessary resources.
