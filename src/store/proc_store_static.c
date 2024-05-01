@@ -25,7 +25,7 @@ int delete_proc(uint8_t slot) {
 	return ret;
 }
 
-void reset_proc_store() {
+int reset_proc_store() {
 	if (proc_mutex_take(proc_store_mutex) != PROC_MUTEX_OK) {
 		return PROC_MUTEX_ERR;
 	}
