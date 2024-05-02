@@ -10,6 +10,26 @@ extern "C" {
 #include <csp_proc/proc_types.h>
 
 extern proc_mutex_t * proc_store_mutex;
+typedef int (*compiled_proc_t)();
+
+extern compiled_proc_t proc_reserved_slots_array[RESERVED_PROC_SLOTS];
+
+typedef enum {
+	PROC_TYPE_NONE,
+	PROC_TYPE_DSL,
+	PROC_TYPE_COMPILED
+} proc_type_t;
+
+/**
+ * A union of procedures defined via the DSL and pre-compiled procedures.
+ */
+typedef struct {
+	proc_type_t type;
+	union {
+		proc_t * dsl_proc;
+		compiled_proc_t compiled_proc;
+	} proc;
+} proc_union_t;
 
 /**
  * Delete/reinitialize a fresh procedure from the procedure storage.
@@ -44,9 +64,9 @@ int __attribute__((weak)) set_proc(proc_t * proc, uint8_t slot, int overwrite);
  *
  * @param slot The slot to get the procedure from
  *
- * @return The procedure at the specified slot, or NULL if the slot is empty
+ * @return The procedure at the specified slot (either a DSL procedure or a pre-compiled procedure, also known as reserved procedure)
  */
-proc_t * __attribute__((weak)) get_proc(uint8_t slot);
+proc_union_t __attribute__((weak)) get_proc(uint8_t slot);
 
 /**
  * Get the slots of the procedures in the procedure storage with an instruction count greater than 0.

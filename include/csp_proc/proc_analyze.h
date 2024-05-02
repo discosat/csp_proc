@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <csp_proc/proc_types.h>
+#include <csp_proc/proc_store.h>
 
 typedef struct {
 	int is_tail_call;
@@ -29,7 +30,7 @@ typedef struct {
 typedef struct proc_analysis_t proc_analysis_t;
 
 struct proc_analysis_t {
-	proc_t * proc;
+	proc_union_t proc_union;
 	proc_analysis_t ** sub_analyses;
 	size_t sub_analysis_count;
 	uint8_t * procedure_slots;
@@ -50,7 +51,7 @@ typedef struct proc_analysis_config_t {
 
 void free_proc_analysis(proc_analysis_t * analysis);
 
-int proc_analyze(proc_t * proc, proc_analysis_t * analysis, proc_analysis_config_t * config);
+int proc_analyze(proc_union_t proc_union, proc_analysis_t * analysis, proc_analysis_config_t * config);
 
 #ifdef __cplusplus
 }

@@ -763,15 +763,19 @@ int proc_runtime_call(proc_instruction_t * instruction, proc_analysis_t ** analy
 		return -1;
 	}
 
+	proc_analysis_t * called_proc_analysis = (*analysis)->sub_analyses[analysis_index];
+	if (called_proc_analysis->proc_union.type == PROC_TYPE_COMPILED) {
+		return called_proc_analysis->proc_union.proc.compiled_proc();
+	}
+
 	if (instruction_analysis->analysis.call.is_tail_call) {
 		// Avoid nesting procedure execution when tail call (reuse outer stack frame)
-		*analysis = (*analysis)->sub_analyses[analysis_index];
-		*proc = (*analysis)->proc;
+		*analysis = called_proc_analysis;
+		*proc = (*analysis)->proc_union.proc.dsl_proc;
 		*_if_else_flag = IF_ELSE_FLAG_NONE;
 		*i = -1;  // It will be incremented to 0 at the start of the next loop iteration
 	} else {
-		proc_analysis_t * called_proc_analysis = (*analysis)->sub_analyses[analysis_index];
-		return proc_instructions_exec(called_proc_analysis->proc, called_proc_analysis);
+		return proc_instructions_exec(called_proc_analysis->proc_union.proc.dsl_proc, called_proc_analysis);
 	}
 	return 0;
 }
