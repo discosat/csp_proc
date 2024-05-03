@@ -211,3 +211,62 @@ proc run 42
 # The result can be read from the rx0 parameter
 get rx0  # returns 55
 ```
+
+## Reserved/Pre-compiled procedures
+The example can be further improved by utilizing reserved/pre-compiled procedures baked into the application code of the server node. This may be relevant if e.g. parts of a procedure become too complex to define with the DSL, or certain routine elements of operation are known up-front. We will move the intialization and calculations steps to a simple C-function such that the user only has to specify `n` and run the appropriate procedure via CSP. Note that procedures in the reserved slots can also be intertwined with procedures defined via the DSL, i.e. by adding `proc call <reserved-slot>` instructions. The following changes should be made to the application code in order to implement and bind a pre-compiled fibonacci-sequence procedure. The provided example follows the DSL-code closely, but the `fibonacci_sequence` function can easily be modified to acheive the desired result in a more C-like manner.
+
+```c
+// (...)
+#include <csp_proc/proc_store.h>
+
+// (...)
+
+int fibonacci_sequence(void) {
+    // Initialization
+    __zero = 0;
+    _rx0 = 0;
+    _rx1 = 1;
+
+    // Calculation
+    while (_n > __zero) {
+        _rx2 = _rx0 + _rx1;
+        _rx0 = _rx1;
+        _rx1 = _rx2;
+        _n--;
+    }
+
+    return 0;
+}
+
+int main() {
+    // (...)
+    proc_reserved_slots_array[0] = fibonacci_sequence;
+    // (...)
+}
+```
+
+### Build setup with reserved procedures
+We need to reserve space for the pre-compiled procedures, which can be done by specifying the following option in the `meson.build` file:
+```meson
+project((...), default_options: [
+    (...)
+    'csp_proc:RESERVED_PROC_SLOTS=1',
+    (...)
+])
+
+(...)
+```
+This marks the procedure slots from slot 0 (inclusive) to slot 1 (exclusive) as reserved for pre-compiled procedures - in this case simply slot 0, since we only need 1 reserved slot. Setting e.g. RESERVED_PROC_SLOTS=5 would reserve slots 0, 1, 2, 3, 4.
+
+### Running the modified example
+With the new changes, you simply have to run the following to acheive a similar result as you observed before:
+```sh
+# Provide an argument for n and run the procedure. Make sure to download the parameter list first to be able to set n directly.
+node 1
+list download
+set n 10
+proc run 0
+
+# The result can be read from the rx0 parameter
+get rx0  # returns 55
+```
