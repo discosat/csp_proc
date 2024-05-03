@@ -1,0 +1,21 @@
+digraph "proc_union_t"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="proc_union_t",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" dsl_proc" ,fontname="Helvetica"];
+  Node2 [label="proc_t",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structproc__t.html",tooltip=" "];
+  Node3 -> Node2 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" instructions" ,fontname="Helvetica"];
+  Node3 [label="proc_instruction_t",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structproc__instruction__t.html",tooltip=" "];
+  Node4 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" unop" ,fontname="Helvetica"];
+  Node4 [label="proc_unop_t",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structproc__unop__t.html",tooltip=" "];
+  Node5 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" block\nifelse" ,fontname="Helvetica"];
+  Node5 [label="proc_block_t",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structproc__block__t.html",tooltip=" "];
+  Node6 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" call" ,fontname="Helvetica"];
+  Node6 [label="proc_call_t",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structproc__call__t.html",tooltip=" "];
+  Node7 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" set" ,fontname="Helvetica"];
+  Node7 [label="proc_set_t",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structproc__set__t.html",tooltip=" "];
+  Node8 -> Node3 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" binop" ,fontname="Helvetica"];
+  Node8 [label="proc_binop_t",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structproc__binop__t.html",tooltip=" "];
+}

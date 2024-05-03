@@ -81,26 +81,44 @@ $(function() {
 <div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="preprocessor">#include &lt;csp_proc/proc_types.h&gt;</span></div>
 <div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="keyword">extern</span> <a class="code" href="structproc__mutex__t.html">proc_mutex_t</a> * proc_store_mutex;</div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160; </div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="keywordtype">int</span> __attribute__((weak)) delete_proc(uint8_t slot);</div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="keywordtype">int</span> __attribute__((weak)) reset_proc_store();</div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="keywordtype">int</span> __attribute__((weak)) proc_store_init();</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keywordtype">int</span> __attribute__((weak)) set_proc(<a class="code" href="structproc__t.html">proc_t</a> * proc, uint8_t slot, <span class="keywordtype">int</span> overwrite);</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<a class="code" href="structproc__t.html">proc_t</a> * __attribute__((weak)) get_proc(uint8_t slot);</div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="keyword">typedef</span> int (*compiled_proc_t)();</div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="keyword">extern</span> compiled_proc_t proc_reserved_slots_array[RESERVED_PROC_SLOTS];</div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="keyword">typedef</span> <span class="keyword">enum</span> {</div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;    PROC_TYPE_NONE,</div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    PROC_TYPE_DSL,</div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;    PROC_TYPE_COMPILED</div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;} proc_type_t;</div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
+<div class="line"><a name="l00026"></a><span class="lineno"><a class="line" href="structproc__union__t.html">   26</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span>{</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    proc_type_t type;</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <span class="keyword">union </span>{</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;        <a class="code" href="structproc__t.html">proc_t</a> * dsl_proc;</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;        compiled_proc_t compiled_proc;</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    } proc;</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;} <a class="code" href="structproc__union__t.html">proc_union_t</a>;</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="keywordtype">int</span> __attribute__((weak)) delete_proc(uint8_t slot);</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160; </div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="keywordtype">int</span> __attribute__((weak)) reset_proc_store();</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keywordtype">int</span> __attribute__((weak)) proc_store_init();</div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="keywordtype">int</span> * __attribute__((weak)) get_proc_slots();</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;}</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="keywordtype">int</span> __attribute__((weak)) set_proc(<a class="code" href="structproc__t.html">proc_t</a> * proc, uint8_t slot, <span class="keywordtype">int</span> overwrite);</div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="preprocessor">#endif  </span><span class="comment">// CSP_PROC_PROC_STORE_H</span></div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<a class="code" href="structproc__union__t.html">proc_union_t</a> __attribute__((weak)) get_proc(uint8_t slot);</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="keywordtype">int</span> * __attribute__((weak)) get_proc_slots();</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;}</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="preprocessor">#endif  </span><span class="comment">// CSP_PROC_PROC_STORE_H</span></div>
 <div class="ttc" id="astructproc__mutex__t_html"><div class="ttname"><a href="structproc__mutex__t.html">proc_mutex_t</a></div><div class="ttdef"><b>Definition:</b> proc_mutex_FreeRTOS.c:6</div></div>
 <div class="ttc" id="astructproc__t_html"><div class="ttname"><a href="structproc__t.html">proc_t</a></div><div class="ttdef"><b>Definition:</b> proc_types.h:106</div></div>
+<div class="ttc" id="astructproc__union__t_html"><div class="ttname"><a href="structproc__union__t.html">proc_union_t</a></div><div class="ttdef"><b>Definition:</b> proc_store.h:26</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

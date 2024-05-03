@@ -10,5 +10,6 @@ var searchData=
   ['proc_5fmutex_5ft_12',['proc_mutex_t',['../structproc__mutex__t.html',1,'']]],
   ['proc_5fset_5ft_13',['proc_set_t',['../structproc__set__t.html',1,'']]],
   ['proc_5ft_14',['proc_t',['../structproc__t.html',1,'']]],
-  ['proc_5funop_5ft_15',['proc_unop_t',['../structproc__unop__t.html',1,'']]]
+  ['proc_5funion_5ft_15',['proc_union_t',['../structproc__union__t.html',1,'']]],
+  ['proc_5funop_5ft_16',['proc_unop_t',['../structproc__unop__t.html',1,'']]]
 ];
