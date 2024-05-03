@@ -1,5 +1,4 @@
 #include <csp_proc/proc_analyze.h>
-#include <csp_proc/proc_store.h>
 #include <csp_proc/proc_memory.h>
 
 /**
@@ -80,9 +79,9 @@ int analyze_instruction(proc_t * proc, uint8_t instruction_index, proc_instructi
  * @param analysis The proc_analysis_t to populate
  * @param config The configuration for the analysis
  */
-int proc_analyze(proc_t * proc, proc_analysis_t * analysis, proc_analysis_config_t * config) {
+int proc_analyze(proc_union_t proc_union, proc_analysis_t * analysis, proc_analysis_config_t * config) {
 	printf("Analyzing procedure\n");
-	analysis->proc = proc;
+	analysis->proc_union = proc_union;
 	analysis->deallocation_mark = 0;
 
 	analysis->sub_analyses = NULL;
@@ -90,6 +89,11 @@ int proc_analyze(proc_t * proc, proc_analysis_t * analysis, proc_analysis_config
 
 	analysis->procedure_slots = NULL;
 	analysis->procedure_slot_count = 0;
+
+	if (proc_union.type != PROC_TYPE_DSL) {
+		return 0;
+	}
+	proc_t * proc = proc_union.proc.dsl_proc;
 
 	analysis->instruction_analyses = proc_calloc(proc->instruction_count, sizeof(proc_instruction_analysis_t));
 	if (analysis->instruction_analyses == NULL) {
@@ -125,8 +129,8 @@ int proc_analyze(proc_t * proc, proc_analysis_t * analysis, proc_analysis_config
 				return -1;
 			}
 
-			proc_t * sub_proc = get_proc(instruction->instruction.call.procedure_slot);
-			if (sub_proc == NULL) {
+			proc_union_t sub_proc_union = get_proc(instruction->instruction.call.procedure_slot);
+			if (sub_proc_union.type != PROC_TYPE_DSL && sub_proc_union.type != PROC_TYPE_COMPILED) {
 				printf("Error fetching sub-procedure from procedure store\n");
 				return -1;
 			}
@@ -146,7 +150,7 @@ int proc_analyze(proc_t * proc, proc_analysis_t * analysis, proc_analysis_config
 				// Mark the procedure as analyzed
 				config->analyzed_procs[instruction->instruction.call.procedure_slot] = 1;
 				config->analyses[instruction->instruction.call.procedure_slot] = sub_analysis;
-				proc_analyze(sub_proc, sub_analysis, config);
+				proc_analyze(sub_proc_union, sub_analysis, config);
 			}
 
 			analysis->sub_analyses[analysis->sub_analysis_count] = sub_analysis;

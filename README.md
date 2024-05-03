@@ -87,8 +87,8 @@ proc run 1  # Run the procedure to log data points when the vehicle is within th
 
 One can then imagine an extended scenario where there is e.g. a third node responsible for some actuator that must react based on the sensor node, which adds another layer of coordination to the system - all this can be orchestrated using the DSL!
 
-### Utilizing reserved, pre-programmable procedure slots (Not yet fully implemented)
-There is also (_planned_) support for pre-programmed procedures in reserved slots, which can be used to simplify the DSL code or take care of more complex operations. For example, one can write a function compiled into the application on node 1 that calculates the euclidean distance between points defined by (`lat`, `lon`) and (`target_lat`, `target_lon`) and stores the result in the `dist` parameter. For the sake of example, let's assumed this procedure is available in slot 0. Then the geo-fencing setup procedure can be simplified as follows:
+### Utilizing reserved, pre-programmable procedure slots
+There is also support for pre-programmed procedures in reserved slots, which can be used to simplify the DSL code or take care of more complex operations. For example, one can write a function compiled into the application on node 1 that calculates the euclidean distance between points defined by (`lat`, `lon`) and (`target_lat`, `target_lon`) and stores the result in the `dist` parameter. For the sake of example, let's assumed this procedure is available in slot 0. Then the geo-fencing setup procedure can be simplified as follows:
 ```bash
 # procedure 1 (geo-fencing setup)
 proc new
