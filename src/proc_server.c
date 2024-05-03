@@ -43,7 +43,18 @@ static void proc_serve_del_request(csp_packet_t * packet) {
 
 static void proc_serve_pull_request(csp_packet_t * packet) {
 	uint8_t slot = packet->data[1];
-	proc_t * procedure = get_proc(slot);
+	if (slot < RESERVED_PROC_SLOTS) {
+		printf("Reserved procedure requested\n");
+		packet->data[0] = PROC_PULL_RESPONSE;
+		packet->data[0] |= PROC_FLAG_END;
+		packet->data[0] |= PROC_FLAG_ERROR;
+		packet->length = 1;
+		csp_sendto_reply(packet, packet, CSP_O_SAME);
+		return;
+	}
+
+	proc_union_t proc_union = get_proc(slot);
+	proc_t * procedure = proc_union.proc.dsl_proc;
 	if (procedure == NULL) {
 		printf("Procedure not found\n");
 		packet->data[0] = PROC_PULL_RESPONSE;

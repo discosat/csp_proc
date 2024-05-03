@@ -22,7 +22,7 @@
 int proc_instructions_exec(proc_t * proc, proc_analysis_t * analysis);
 
 typedef struct {
-	proc_t * proc;
+	proc_union_t * proc_union;
 	TaskHandle_t task_handle;
 } task_t;
 
@@ -53,7 +53,9 @@ int proc_stop_runtime_task(TaskHandle_t task_handle) {
 	for (size_t i = 0; i < running_tasks_count; i++) {
 		if (running_tasks[i].task_handle == task_handle) {
 			vTaskDelete(running_tasks[i].task_handle);
-			free_proc(running_tasks[i].proc);
+			if (running_tasks[i].proc_union->type == PROC_TYPE_DSL) {
+				free_proc(running_tasks[i].proc_union->proc.dsl_proc);
+			}
 			running_tasks[i] = running_tasks[running_tasks_count - 1];
 			running_tasks = proc_realloc(running_tasks, --running_tasks_count * sizeof(task_t));
 			break;
@@ -79,9 +81,7 @@ int proc_stop_all_runtime_tasks() {
 	return inf_loop_guard < 1000 ? 0 : -1;
 }
 
-void runtime_task(void * pvParameters) {
-	proc_t * proc = (proc_t *)pvParameters;
-
+int dsl_proc_exec(proc_union_t proc_union) {
 	// Perform static analysis
 	proc_analysis_config_t analysis_config = {
 		.analyzed_procs = proc_calloc(MAX_PROC_SLOT + 1, sizeof(int)),
@@ -93,17 +93,38 @@ void runtime_task(void * pvParameters) {
 		return -1;
 	}
 
-	if (proc_analyze(proc, analysis, &analysis_config) != 0) {
+	if (proc_analyze(proc_union, analysis, &analysis_config) != 0) {
 		csp_print("Error analyzing procedure\n");
 		return -1;
 	}
 
-	int ret = proc_instructions_exec(proc, analysis);  // TODO: set error flag param
+	int ret = proc_instructions_exec(proc_union.proc.dsl_proc, analysis);
+
+	// Procedure finished, clean up
+	free_proc_analysis(analysis);
+	free_proc(proc_union.proc.dsl_proc);
+
+	return ret;
+}
+
+void runtime_task(void * pvParameters) {
+	proc_union_t * proc_union = (proc_union_t *)pvParameters;
+
+	int ret;
+	switch (proc_union->type) {
+		case PROC_TYPE_DSL:
+			ret = dsl_proc_exec(*proc_union);
+			break;
+		case PROC_TYPE_COMPILED:
+			ret = proc_union->proc.compiled_proc();
+			break;
+		default:
+			ret = -1;
+	}
+	// TODO: set error flag param if ret != 0
 
 	// Procedure finished, clean up
 	if (xSemaphoreTake(running_tasks_mutex, portMAX_DELAY) != pdTRUE) {
-		free_proc_analysis(analysis);
-		free_proc(proc);
 		vTaskDelete(NULL);
 		return;
 	}
@@ -116,9 +137,8 @@ void runtime_task(void * pvParameters) {
 		}
 	}
 	xSemaphoreGive(running_tasks_mutex);
+	proc_free(proc_union);
 	csp_print("Procedure finished (%s)\n", pcTaskGetName(task_handle));
-	free_proc_analysis(analysis);
-	free_proc(proc);
 	vTaskDelete(NULL);
 }
 
@@ -129,27 +149,30 @@ int proc_runtime_run(uint8_t proc_slot) {
 		return -1;
 	}
 
-	proc_t * stored_proc = get_proc(proc_slot);
+	proc_union_t * stored_proc = proc_malloc(sizeof(proc_union_t));
+	*stored_proc = get_proc(proc_slot);
 
-	if (stored_proc == NULL) {
+	if (stored_proc->type != PROC_TYPE_DSL && stored_proc->type != PROC_TYPE_COMPILED) {
 		csp_print("Procedure in slot %d not found\n", proc_slot);
 		return -1;
 	}
-	if (stored_proc->instruction_count == 0) {
-		csp_print("Procedure in slot %d has no instructions\n", proc_slot);
-		return -1;
-	}
 
-	// Copy procedure to detach from proc store
-	proc_t * detached_proc = proc_malloc(sizeof(proc_t));
-	if (deepcopy_proc(stored_proc, detached_proc) != 0) {
-		csp_print("Failed to copy procedure\n");
-		return -1;
+	if (stored_proc->type == PROC_TYPE_DSL) {
+		// Copy procedure to detach from proc store
+		proc_t * detached_proc = proc_malloc(sizeof(proc_t));
+		if (deepcopy_proc(stored_proc->proc.dsl_proc, detached_proc) != 0) {
+			csp_print("Failed to copy procedure\n");
+			return -1;
+		}
+		stored_proc->proc.dsl_proc = detached_proc;
 	}
 
 	// Create task
 	if (xSemaphoreTake(running_tasks_mutex, portMAX_DELAY) != pdTRUE) {  // taking mutex early to prevent clean-up from the newly spawned task before it's added to the task array
-		free_proc(detached_proc);
+		if (stored_proc->type == PROC_TYPE_DSL) {
+			free_proc(stored_proc->proc.dsl_proc);
+		}
+		proc_free(stored_proc);
 		return -1;
 	}
 
@@ -157,18 +180,21 @@ int proc_runtime_run(uint8_t proc_slot) {
 	char task_name[configMAX_TASK_NAME_LEN];
 	sprintf(task_name, "RNTM%d", proc_slot);
 	BaseType_t task_create_ret;
-	task_create_ret = xTaskCreate(runtime_task, task_name, PROC_RUNTIME_TASK_SIZE, detached_proc, PROC_RUNTIME_TASK_PRIORITY, &task_handle);
+	task_create_ret = xTaskCreate(runtime_task, task_name, PROC_RUNTIME_TASK_SIZE, stored_proc, PROC_RUNTIME_TASK_PRIORITY, &task_handle);
 
 	if (task_create_ret != pdPASS) {
 		csp_print("Failed to create task\n");
-		free_proc(detached_proc);
+		if (stored_proc->type == PROC_TYPE_DSL) {
+			free_proc(stored_proc->proc.dsl_proc);
+		}
+		proc_free(stored_proc);
 		xSemaphoreGive(running_tasks_mutex);
 		return -1;
 	}
 
 	// Add task to array
 	running_tasks = proc_realloc(running_tasks, ++running_tasks_count * sizeof(task_t));
-	running_tasks[running_tasks_count - 1] = (task_t){.proc = detached_proc, .task_handle = task_handle};
+	running_tasks[running_tasks_count - 1] = (task_t){.proc_union = stored_proc, .task_handle = task_handle};
 	xSemaphoreGive(running_tasks_mutex);
 
 	return 0;
