@@ -28,7 +28,8 @@ typedef enum {
 	PROC_BINOP,
 	PROC_CALL,
 	PROC_NOOP,
-} proc_instruction_type_t;
+} __attribute__((__packed__)) proc_instruction_type_t;
+// __attribute__((packed)) to ensure the enum is 1 byte in size
 
 typedef enum {
 	OP_EQ,   // ==
@@ -37,7 +38,8 @@ typedef enum {
 	OP_GT,   // >
 	OP_LE,   // <=
 	OP_GE,   // >=
-} comparison_op_t;
+} __attribute__((__packed__)) comparison_op_t;
+// __attribute__((packed)) to ensure the enum is 1 byte in size
 
 typedef enum {
 	OP_INC,  // ++
@@ -46,7 +48,8 @@ typedef enum {
 	OP_NEG,  // -
 	OP_IDT,  // idt (identity - practically a copy operation)
 	OP_RMT,  // rmt (remote - same as identity, but <param> is local and <result> is remote)
-} unary_op_t;
+} __attribute__((__packed__)) unary_op_t;
+// __attribute__((packed)) to ensure the enum is 1 byte in size
 
 typedef enum {
 	OP_ADD,  // +
@@ -59,7 +62,8 @@ typedef enum {
 	OP_AND,  // &
 	OP_OR,   // |
 	OP_XOR,  // ^
-} binary_op_t;
+} __attribute__((__packed__)) binary_op_t;
+// __attribute__((packed)) to ensure the enum is 1 byte in size
 
 typedef struct {
 	char * param_a;
