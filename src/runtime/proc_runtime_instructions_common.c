@@ -779,3 +779,32 @@ int proc_runtime_call(proc_instruction_t * instruction, proc_analysis_t ** analy
 	}
 	return 0;
 }
+
+int dsl_proc_exec(proc_union_t proc_union) {
+	// Perform static analysis
+	proc_analysis_config_t analysis_config = {
+		.analyzed_procs = proc_calloc(MAX_PROC_SLOT + 1, sizeof(int)),
+		.analyses = proc_calloc(MAX_PROC_SLOT + 1, sizeof(proc_analysis_t *)),
+		.analyzed_proc_count = 0};
+	proc_analysis_t * analysis = proc_malloc(sizeof(proc_analysis_t));
+	if (analysis == NULL) {
+		csp_print("Error allocating memory for analysis\n");
+		return -1;
+	}
+
+	if (proc_analyze(proc_union, analysis, &analysis_config) != 0) {
+		csp_print("Error analyzing procedure\n");
+		return -1;
+	}
+
+	int ret = proc_instructions_exec(proc_union.proc.dsl_proc, analysis);
+
+	// Procedure finished, clean up
+	free_proc_analysis(analysis);
+	free_proc(proc_union.proc.dsl_proc);
+
+	proc_free(analysis_config.analyzed_procs);
+	proc_free(analysis_config.analyses);
+
+	return ret;
+}
