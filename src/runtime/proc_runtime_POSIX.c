@@ -10,7 +10,7 @@
 #include <stdlib.h>
 
 // forward declaration
-int proc_instructions_exec(proc_t * proc, proc_analysis_t * analysis);
+int dsl_proc_exec(proc_union_t proc_union);
 
 typedef struct {
 	proc_union_t * proc_union;
@@ -74,44 +74,18 @@ int proc_stop_all_runtime_threads() {
 	return inf_loop_guard < 1000 ? 0 : -1;
 }
 
-int dsl_proc_exec(proc_union_t proc_union) {
-	// Perform static analysis
-	proc_analysis_config_t analysis_config = {
-		.analyzed_procs = proc_calloc(MAX_PROC_SLOT + 1, sizeof(int)),
-		.analyses = proc_calloc(MAX_PROC_SLOT + 1, sizeof(proc_analysis_t *)),
-		.analyzed_proc_count = 0};
-	proc_analysis_t * analysis = proc_malloc(sizeof(proc_analysis_t));
-	if (analysis == NULL) {
-		csp_print("Error allocating memory for analysis\n");
-		return -1;
-	}
-
-	if (proc_analyze(proc_union, analysis, &analysis_config) != 0) {
-		csp_print("Error analyzing procedure\n");
-		return -1;
-	}
-
-	if (pthread_key_create(&recursion_depth_key, NULL) != 0) {
-		csp_print("Error creating pthread key\n");
-		return -1;
-	}
-
-	int ret = proc_instructions_exec(proc_union.proc.dsl_proc, analysis);
-
-	// Procedure finished, clean up
-	free_proc_analysis(analysis);
-	free_proc(proc_union.proc.dsl_proc);
-
-	return ret;
-}
-
 void * runtime_thread(void * pvParameters) {
 	proc_union_t * proc_union = (proc_union_t *)pvParameters;
 
 	int ret;
 	switch (proc_union->type) {
 		case PROC_TYPE_DSL:
+			if (pthread_key_create(&recursion_depth_key, NULL) != 0) {
+				csp_print("Error creating pthread key\n");
+				return -1;
+			}
 			ret = dsl_proc_exec(*proc_union);
+			pthread_key_delete(recursion_depth_key);
 			break;
 		case PROC_TYPE_COMPILED:
 			ret = proc_union->proc.compiled_proc();
