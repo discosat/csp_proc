@@ -46,7 +46,7 @@ int proc_runtime_block(proc_instruction_t * instruction) {
 		} else if (ifelse_result == IF_ELSE_FLAG_TRUE) {
 			break;
 		}
-
+/* note: suggestion comment out this next line to remove lock issue */
 		vTaskDelay(pdMS_TO_TICKS(MIN_PROC_BLOCK_PERIOD_MS));
 	}
 
