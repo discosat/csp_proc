@@ -118,7 +118,7 @@ void runtime_task(void * pvParameters) {
 
 int proc_runtime_run(uint8_t proc_slot) {
 	csp_print("Running procedure %d\n", proc_slot);
-	if (running_tasks_count >= MAX_PROC_CONCURRENT) {
+	if (running_tasks_count > MAX_PROC_CONCURRENT) {
 		csp_print("Maximum number of concurrent procedures reached\n");
 		return -1;
 	}

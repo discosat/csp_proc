@@ -25,7 +25,7 @@ extern "C" {
 #endif
 
 #ifndef MAX_PROC_CONCURRENT
-#define MAX_PROC_CONCURRENT (16U)
+#define MAX_PROC_CONCURRENT (1U)
 #endif
 
 /**
